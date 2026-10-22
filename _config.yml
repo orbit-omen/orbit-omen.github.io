@@ -1,0 +1,7 @@
+# GitHub Pages Configuration
+theme: null
+markdown: kramdown
+include:
+  - .nojekyll
+  - config.json
+  - manifest.json

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrbitOmen - Developer & Modder</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <canvas id="bg-canvas"></canvas>
+
+  <div id="click-enter-screen" class="hidden">
+    <h2 id="enter-screen-text" style="color: #fdf2f8; font-size: 1.5rem; font-family: var(--font-family);">Click to Enter the Realm</h2>
+  </div>
+
+  <main class="app-wrapper">
+    <header class="profile-card">
+      <div id="banner" class="banner"></div>
+      <div class="avatar-container">
+        <img id="avatar" class="avatar" src="" alt="Avatar">
+      </div>
+      <div class="name-badge">
+        <h1 id="display-name" class="display-name">OrbitOmen</h1>
+        <span id="verified-badge" class="verified-icon">✓</span>
+      </div>
+      <div id="status-pill" class="status-pill"></div>
+      <p id="bio-text" class="bio-text"></p>
+    </header>
+
+    <section id="blocks-container" style="display: flex; flex-direction: column; gap: var(--spacing);"></section>
+  </main>
+
+  <button id="music-toggle" class="music-toggle" style="display: none;" title="Toggle Music">🎵</button>
+  <div id="toast" class="toast"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

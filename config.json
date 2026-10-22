@@ -1,0 +1,131 @@
+{
+  "installed": true,
+  "adminPasswordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+  "theme": {
+    "preset": "orbitomen-enchanted",
+    "bgType": "portal-animated",
+    "bgColor": "#0c0714",
+    "bgGradient": "linear-gradient(140deg, #0c0714 0%, #1e0b30 35%, #2e0f45 70%, #42123f 100%)",
+    "textColor": "#fdf2f8",
+    "cardBg": "rgba(28, 16, 44, 0.78)",
+    "cardBorder": "rgba(244, 114, 182, 0.25)",
+    "accentColor": "#d946ef",
+    "accentPink": "#f472b6",
+    "accentPurple": "#a855f7",
+    "buttonStyle": "rounded",
+    "borderRadius": 14,
+    "spacing": 16,
+    "maxWidth": 680,
+    "fontFamily": "'JetBrains Mono', 'Inter', monospace",
+    "blur": 16,
+    "customCss": "",
+    "enableParticles": true,
+    "clickSound": true
+  },
+  "profile": {
+    "avatar": "https://images.unsplash.com/photo-1563089145-599997674d42?w=300&h=300&fit=crop",
+    "avatarFrame": "glow",
+    "banner": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&h=420&fit=crop",
+    "displayName": "OrbitOmen",
+    "verified": true,
+    "bio": "🔮 Full-Stack Developer & Minecraft Modder. Brewing code, architecting systems, and weaving enchanted voxel worlds.",
+    "typingBio": true,
+    "statusText": "🟣 Crafting fabric mods & shader pipelines",
+    "clickToEnter": false,
+    "clickToEnterText": "Click to Enter the Realm",
+    "bgMusic": "",
+    "secretCode": "nether",
+    "secretBlockId": "b-secret"
+  },
+  "blocks": [
+    {
+      "id": "b-modrinth",
+      "type": "link",
+      "title": "Modrinth & CurseForge Projects",
+      "subtitle": "Fabric mods, custom worldgens, and utility toolkits",
+      "url": "https://modrinth.com",
+      "icon": "🌿",
+      "badge": "RELEASE",
+      "openExternal": true,
+      "image": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=180&fit=crop"
+    },
+    {
+      "id": "b-github",
+      "type": "link",
+      "title": "GitHub Repositories",
+      "subtitle": "Open-source Java backends, bots, and voxel engines",
+      "url": "https://github.com",
+      "icon": "🐙",
+      "badge": "DEV",
+      "openExternal": true,
+      "image": ""
+    },
+    {
+      "id": "b-banner-img",
+      "type": "image",
+      "title": "Nether Forge Showcase",
+      "image": "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=600&h=260&fit=crop",
+      "url": "https://modrinth.com",
+      "openExternal": true
+    },
+    {
+      "id": "b-mc",
+      "type": "minecraft",
+      "title": "OrbitSMP - Enchanted Server",
+      "icon": "🎮",
+      "serverIp": "play.hypixel.net",
+      "copyOnClick": true,
+      "image": ""
+    },
+    {
+      "id": "b-discord-live",
+      "type": "discord",
+      "title": "Discord Presence",
+      "icon": "👾",
+      "lanyardId": "80351110224678912"
+    },
+    {
+      "id": "b-skills",
+      "type": "skills",
+      "title": "Developer Tech Stack",
+      "icon": "⚡",
+      "tags": ["Java 21", "TypeScript", "Rust", "Fabric API", "Docker", "OpenGL", "TailwindCSS"]
+    },
+    {
+      "id": "b-copy-ign",
+      "type": "copy",
+      "title": "Minecraft IGN",
+      "icon": "🗡️",
+      "valueToCopy": "OrbitOmen",
+      "toastMessage": "OrbitOmen copied to clipboard!"
+    },
+    {
+      "id": "b-faq",
+      "type": "faq",
+      "icon": "❓",
+      "title": "Frequently Asked Questions",
+      "items": [
+        {
+          "q": "What Minecraft version do you develop for?",
+          "a": "Primarily modern releases (1.20+ and 1.21+) using Fabric and NeoForge."
+        },
+        {
+          "q": "Can I use your mods in my modpack?",
+          "a": "Yes! All public mods are open for curseforge and modrinth modpacks."
+        },
+        {
+          "q": "What developer tools do you use?",
+          "a": "IntelliJ IDEA Ultimate, Neovim, Blockbench for voxel models, and Git."
+        }
+      ]
+    },
+    {
+      "id": "b-secret",
+      "type": "text",
+      "title": "Secret Nether Vault",
+      "icon": "✨",
+      "text": "✨ Nether Easter Egg unlocked! You discovered OrbitOmen's hidden debug vault.",
+      "hidden": true
+    }
+  ]
+}

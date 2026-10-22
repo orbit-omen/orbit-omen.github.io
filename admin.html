@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OrbitOmen Admin Dashboard</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <div id="login-modal" class="auth-modal" style="display: none;">
+    <form class="auth-box" onsubmit="handleLogin(event)">
+      <h2>OrbitOmen Admin</h2>
+      <p style="font-size: 0.8rem; color: #fbcfe8; opacity: 0.8;">Default password: <code>admin123</code></p>
+      <input type="password" name="password" placeholder="Admin Password" required>
+      <button type="submit">Enter Dashboard</button>
+    </form>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">🔮 OrbitAdmin</div>
+    <ul class="nav-list">
+      <li id="nav-profile" class="nav-item active" onclick="showSection('profile')">👤 Profile</li>
+      <li id="nav-blocks" class="nav-item" onclick="showSection('blocks')">🧱 Blocks</li>
+      <li id="nav-design" class="nav-item" onclick="showSection('design')">🎨 Theme & Colors</li>
+      <li id="nav-deploy" class="nav-item" onclick="showSection('deploy')">🚀 Deploy / Export</li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-secondary" onclick="logout()">Logout</button>
+      <a href="./index.html" target="_blank" style="color: #f472b6; text-decoration: none; align-self: center; font-size: 0.85rem;">View Site ↗</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <section class="editor-pane">
+      <div class="top-bar">
+        <div>
+          <button class="btn-secondary" onclick="undo()">↶ Undo</button>
+          <button class="btn-secondary" onclick="redo()">↷ Redo</button>
+        </div>
+        <button class="btn-primary" onclick="saveLocalConfig()">Save Local Draft</button>
+      </div>
+
+      <!-- Profile Section -->
+      <div id="section-profile" class="section-panel active">
+        <h3 style="color:#f472b6">Profile Settings</h3>
+        <div class="form-group">
+          <label>Display Name</label>
+          <input id="cfg-displayName" class="form-control" oninput="updateProfileFromInputs()">
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <textarea id="cfg-bio" class="form-control" rows="3" oninput="updateProfileFromInputs()"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status Line</label>
+            <input id="cfg-statusText" class="form-control" oninput="updateProfileFromInputs()">
+          </div>
+          <div class="form-group">
+            <label>Avatar Frame</label>
+            <select id="cfg-avatarFrame" class="form-control" onchange="updateProfileFromInputs()">
+              <option value="none">None</option>
+              <option value="ring">Pink Ring</option>
+              <option value="glow">Purple & Pink Glow</option>
+              <option value="rainbow">Enchanted Gradient</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Avatar URL</label>
+            <input id="cfg-avatar" class="form-control" oninput="updateProfileFromInputs()">
+          </div>
+          <div class="form-group">
+            <label>Banner URL</label>
+            <input id="cfg-banner" class="form-control" oninput="updateProfileFromInputs()">
+          </div>
+        </div>
+        <div class="form-row">
+          <label><input type="checkbox" id="cfg-verified" onchange="updateProfileFromInputs()"> Verified Badge</label>
+          <label><input type="checkbox" id="cfg-typingBio" onchange="updateProfileFromInputs()"> Typing Effect</label>
+          <label><input type="checkbox" id="cfg-clickToEnter" onchange="updateProfileFromInputs()"> Click-to-Enter Screen</label>
+        </div>
+        <div class="form-group">
+          <label>Background Music URL (Direct MP3 link)</label>
+          <input id="cfg-bgMusic" class="form-control" placeholder="https://..." oninput="updateProfileFromInputs()">
+        </div>
+      </div>
+
+      <!-- Blocks Section -->
+      <div id="section-blocks" class="section-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="color:#f472b6">Manage Blocks</h3>
+          <div style="display: flex; gap: 8px;">
+            <select id="new-block-type" class="form-control">
+              <option value="link">Link Block</option>
+              <option value="image">Image / Showcase Block</option>
+              <option value="header">Header</option>
+              <option value="divider">Divider</option>
+              <option value="text">Text Block</option>
+              <option value="copy">Copy to Clipboard</option>
+              <option value="minecraft">Minecraft Server</option>
+              <option value="discord">Discord Presence</option>
+              <option value="faq">FAQ Accordion</option>
+            </select>
+            <button class="btn-primary" onclick="addBlock()">+ Add Block</button>
+          </div>
+        </div>
+        <div id="blocks-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      </div>
+
+      <!-- Design Section -->
+      <div id="section-design" class="section-panel">
+        <h3 style="color:#f472b6">Theme & Colors</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Background Color</label>
+            <input type="color" id="cfg-bgColor" class="form-control" oninput="updateThemeFromInputs()">
+          </div>
+          <div class="form-group">
+            <label>Text Color</label>
+            <input type="color" id="cfg-textColor" class="form-control" oninput="updateThemeFromInputs()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Accent Color</label>
+            <input type="color" id="cfg-accentColor" class="form-control" oninput="updateThemeFromInputs()">
+          </div>
+          <div class="form-group">
+            <label>Font Family</label>
+            <input id="cfg-fontFamily" class="form-control" oninput="updateThemeFromInputs()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Card Background</label>
+            <input id="cfg-cardBg" class="form-control" oninput="updateThemeFromInputs()">
+          </div>
+          <div class="form-group">
+            <label>Card Border</label>
+            <input id="cfg-cardBorder" class="form-control" oninput="updateThemeFromInputs()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Border Radius (px)</label>
+            <input type="range" min="0" max="36" id="cfg-borderRadius" oninput="updateThemeFromInputs()">
+          </div>
+          <div class="form-group">
+            <label>Max Page Width (px)</label>
+            <input type="range" min="400" max="900" id="cfg-maxWidth" oninput="updateThemeFromInputs()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Custom CSS</label>
+          <textarea id="cfg-customCss" class="form-control" rows="5" placeholder=".block-item { ... }" oninput="updateThemeFromInputs()"></textarea>
+        </div>
+      </div>
+
+      <!-- Deploy Section -->
+      <div id="section-deploy" class="section-panel">
+        <h3 style="color:#f472b6">GitHub Pages Export</h3>
+        <p style="font-size: 0.88rem; color: #fbcfe8; opacity: 0.9;">
+          Changes saved here are cached in your local browser for instant preview. When you are ready to publish them to the live GitHub Pages site:
+        </p>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn-primary" onclick="downloadConfigJson()">📥 Download config.json</button>
+          <button class="btn-secondary" onclick="changeAdminPassword()">🔑 Change Password</button>
+        </div>
+
+        <div style="background: #11071c; border: 1px solid rgba(244, 114, 182, 0.35); padding: 18px; border-radius: 12px; margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+          <h4 style="color: #f472b6; font-size: 1rem;">⚡ Direct GitHub Sync (One-Click Publish)</h4>
+          <p style="font-size: 0.82rem; color: #fbcfe8; opacity: 0.85;">
+            Authenticate with your GitHub Personal Access Token (PAT) to commit <code>config.json</code> straight to your repository without leaving this page.
+          </p>
+
+          <div class="form-group">
+            <label>GitHub Repository (<code>username/repo-name</code>)</label>
+            <input id="gh-repo" class="form-control" placeholder="e.g. OrbitOmen/bio">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Target Branch</label>
+              <input id="gh-branch" class="form-control" value="main" placeholder="main">
+            </div>
+            <div class="form-group">
+              <label>Personal Access Token (PAT)</label>
+              <input id="gh-token" type="password" class="form-control" placeholder="ghp_... or github_pat_...">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+            <button class="btn-primary" onclick="commitToGitHub()">🚀 Push Commit to GitHub</button>
+            <span style="font-size: 0.78rem; color: #fbcfe8; opacity: 0.7;">Token is saved strictly in your local browser storage.</span>
+          </div>
+
+          <div id="gh-sync-status" style="display: none; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); font-size: 0.85rem; border: 1px solid rgba(244, 114, 182, 0.2);"></div>
+        </div>
+
+        <div style="background: #11071c; border: 1px solid rgba(244, 114, 182, 0.2); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.85rem; line-height: 1.6;">
+          <strong style="color:#f472b6">Alternative Manual Deploy:</strong>
+          <ol style="margin-left: 20px; margin-top: 5px;">
+            <li>Click <strong>Download config.json</strong>.</li>
+            <li>Replace <code>config.json</code> in your repository root with the downloaded file.</li>
+            <li>Commit and push to your GitHub Pages branch.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Preview Pane -->
+    <section class="preview-pane">
+      <div class="preview-controls">
+        <button id="btn-preview-mobile" class="active" onclick="setPreviewDevice('mobile')">Mobile</button>
+        <button id="btn-preview-tablet" onclick="setPreviewDevice('tablet')">Tablet</button>
+        <button id="btn-preview-desktop" onclick="setPreviewDevice('desktop')">Desktop</button>
+      </div>
+      <div class="iframe-container">
+        <iframe id="preview-frame" src="./index.html" title="Live Preview"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <script src="./admin.js"></script>
+</body>
+</html>
