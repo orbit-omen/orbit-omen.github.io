@@ -1,0 +1,9 @@
+{
+  "name": "orbitomen-studio",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "check": "node --check assets/site.js && node --check studio/studio.js"
+  }
+}
