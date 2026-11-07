@@ -161,3 +161,15 @@ html.dark nav { background: color-mix(in srgb, var(--bg) 88%, transparent); back
 .bp line { fill: none; stroke: currentColor; stroke-width: 1; stroke-dasharray: 100 100; stroke-dashoffset: 100; opacity: .6; }
 .idle-layer { position: fixed; inset: 0; pointer-events: none; z-index: 45; overflow: hidden; transition: opacity .6s ease; }
 .idle-layer.out { opacity: 0; }
+
+.filters { display: flex; flex-direction: column; gap: 14px; margin: 0 0 28px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 7px 14px; border-radius: 999px; font: 600 12px ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: .06em; cursor: pointer; transition: background .2s, border-color .2s; }
+.chip b { color: var(--accent2); margin-left: 4px; }
+.chip:hover { border-color: var(--accent); }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip.on b { color: #fff; }
+.fbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.fsearch { min-width: 220px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; font-size: 14px; outline: none; }
+.fsearch:focus { border-color: var(--accent); }
+.fcount { font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--muted); }

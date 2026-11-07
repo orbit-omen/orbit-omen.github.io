@@ -147,5 +147,7 @@
     "mirror": false,
     "spin": 1,
     "idle": true
-  }
+  },
+  "categories": [],
+  "repoCategories": {}
 }

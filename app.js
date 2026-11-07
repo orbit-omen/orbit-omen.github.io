@@ -16,6 +16,7 @@ function videoHtml(v) {
 }
 
 let cursorObs = null;
+let filterState = { cat: 'all', q: '' };
 let liveRepos = [];
 
 function applyTheme(d) {
@@ -45,13 +46,27 @@ function render(d, repos) {
   const grid = a => `<div class="grid">${a.join('')}</div>`;
   const a = d.about || {};
 
-  const manual = (d.projects || []).filter(p => p.show !== false).map(p => `<article class="card" data-build>
+  const cats = d.categories || [];
+  if (filterState.cat !== 'all' && !cats.some(c => c.id === filterState.cat)) filterState.cat = 'all';
+  const allItems = [];
+  (d.projects || []).filter(p => p.show !== false).forEach(p => {
+    const pc = p.categories || [];
+    allItems.push({ cats: pc, html: `<article class="card" data-build data-cats="${esc(pc.join(' '))}" data-text="${esc([p.title, p.description, ...(p.tags || [])].join(' ').toLowerCase())}">
       ${thumb(p.image)}<div class="meta">${esc(p.status)}</div><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p>
-      ${pills(p.tags)}${p.url ? `<p><a class="link" href="${esc(p.url)}" target="_blank" rel="noopener">Open →</a></p>` : ''}</article>`);
-  const repoCards = (repos || []).filter(r => !hiddenRepos[r.name]).map(r => `<article class="card" data-build>
+      ${pills(p.tags)}${p.url ? `<p><a class="link" href="${esc(p.url)}" target="_blank" rel="noopener">Open →</a></p>` : ''}</article>` });
+  });
+  (repos || []).filter(r => !hiddenRepos[r.name]).forEach(r => {
+    const rc = (d.repoCategories || {})[r.name] || [];
+    allItems.push({ cats: rc, html: `<article class="card" data-build data-cats="${esc(rc.join(' '))}" data-text="${esc([r.name, r.description, r.language, ...(r.topics || [])].join(' ').toLowerCase())}">
       ${thumb((d.repoImages || {})[r.name])}<div class="meta">REPO${r.language ? ' · ' + esc(r.language) : ''} · ★ ${r.stars}</div><h3>${esc(r.name)}</h3><p>${esc(r.description)}</p>
-      ${pills(r.topics)}<p><a class="link" href="${esc(r.url)}" target="_blank" rel="noopener">View repo →</a></p></article>`);
-  const projects = [...manual, ...repoCards];
+      ${pills(r.topics)}<p><a class="link" href="${esc(r.url)}" target="_blank" rel="noopener">View repo →</a></p></article>` });
+  });
+  const projects = allItems.map(x => x.html);
+  const catCount = id => allItems.filter(x => x.cats.includes(id)).length;
+  const filterBar = allItems.length ? `<div class="filters" data-build>
+      <div class="chips"><button class="chip ${filterState.cat === 'all' ? 'on' : ''}" data-filter="all">All <b>${allItems.length}</b></button>${cats.map(c => `<button class="chip ${filterState.cat === c.id ? 'on' : ''}" data-filter="${esc(c.id)}">${esc(c.label)} <b>${catCount(c.id)}</b></button>`).join('')}</div>
+      <div class="fbar"><input class="fsearch" type="search" placeholder="Search…" value="${esc(filterState.q)}"><span id="filterCount" class="fcount"></span></div>
+    </div>` : '';
   const services = (d.services || []).map(s => `<article class="card" data-build>${thumb(s.image)}<h3>${esc(s.name)}</h3><p>${esc(s.description)}</p></article>`);
   const videos = (d.videos || []).map(v => `<article class="card" data-build>${videoHtml(v)}<h3>${esc(v.title)}</h3></article>`);
   const updates = (d.updates || []).map(u => `<article class="card" data-build>${thumb(u.image)}<div class="meta">${esc(u.date)}</div><h3>${esc(u.title)}</h3><p>${esc(u.text)}</p></article>`);
@@ -93,7 +108,7 @@ function render(d, repos) {
       <div class="skin-stage" data-build><canvas id="skinCanvas"></canvas><div class="scan"></div><div class="skin-name">${esc(nameTag)}</div></div>
     </div></section>` : ''}
     ${sec('about', '01 — About', 'Background', aboutInner, !!a.text)}
-    ${sec('projects', '02 — Projects', 'Projects', grid(projects), projects.length)}
+    ${sec('projects', '02 — Projects', 'Projects', filterBar + grid(projects), projects.length)}
     ${sec('services', '03 — Services', 'What I do', grid(services), services.length)}
     ${sec('videos', '04 — Videos', 'Videos', grid(videos), videos.length)}
     ${sec('updates', '05 — Updates', 'Latest', grid(updates), updates.length)}
@@ -104,6 +119,7 @@ function render(d, repos) {
 
   if (!on('hero')) document.querySelector('.hero').remove();
   if (skinOn) initSkin(skinCfg, nameTag);
+  applyFilter();
   setupCursors(d.cursors);
 }
 
@@ -337,7 +353,7 @@ function startSwarm(items, layer, n, palette) {
 }
 
 function buildSection(sec, layer, sc, list, speed, c) {
-  const all = [...sec.querySelectorAll('[data-build]')];
+  const all = [...sec.querySelectorAll('[data-build]')].filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
   const draw = c.blueprint && sc.blueprint;
   const queues = planQueues(all, sc, list.length);
   const active = queues.filter(q => q.length);
@@ -532,7 +548,36 @@ async function initSkin(cfg, tag) {
   };
 }
 
+function applyFilter() {
+  const q = filterState.q.trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#projects .card').forEach(c => {
+    const cs = (c.dataset.cats || '').split(' ').filter(Boolean);
+    const ok = (filterState.cat === 'all' || cs.includes(filterState.cat)) && (!q || (c.dataset.text || '').includes(q));
+    c.style.display = ok ? '' : 'none';
+    if (ok) { shown++; c.classList.add('built'); }
+  });
+  document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('on', b.dataset.filter === filterState.cat));
+  const n = document.getElementById('filterCount');
+  if (n) n.textContent = `${shown} shown`;
+}
+function onAppClick(e) {
+  const b = e.target.closest && e.target.closest('[data-filter]');
+  if (!b) return;
+  filterState.cat = b.dataset.filter;
+  applyFilter();
+}
+function onAppInput(e) {
+  if (e.target.classList && e.target.classList.contains('fsearch')) {
+    filterState.q = e.target.value;
+    applyFilter();
+  }
+}
+
 async function boot() {
+  const app = document.getElementById('app');
+  app.addEventListener('click', onAppClick);
+  app.addEventListener('input', onAppInput);
   const d = await (await fetch('data/portfolio.json')).json();
   let repos = d.repos || [];
   try {
