@@ -1,0 +1,151 @@
+{
+  "name": "Yugansh",
+  "brand": "OrbitOmen",
+  "role": "Minecraft creator · Developer",
+  "github": "orbit-omen",
+  "heroTitle": "Hello, I'm",
+  "tagline": "Building Minecraft servers, plugins, shaders and tools.",
+  "heroCta": "See my work",
+  "avatarText": "OO",
+  "contactHeading": "Let's build together.",
+  "footer": "© 2026 OrbitOmen",
+  "theme": {
+    "accent": "#b48cf2",
+    "accent2": "#f5a3cf",
+    "darkDefault": true,
+    "blueprint": "#4aa8ff"
+  },
+  "show": {
+    "hero": true,
+    "about": true,
+    "projects": true,
+    "services": true,
+    "videos": true,
+    "updates": true,
+    "contact": true
+  },
+  "about": {
+    "text": "",
+    "image": "",
+    "facts": [
+      {
+        "label": "Handle",
+        "value": "@yugansh_raj96"
+      }
+    ]
+  },
+  "projects": [],
+  "services": [],
+  "videos": [],
+  "updates": [],
+  "links": [
+    {
+      "label": "Discord",
+      "url": "",
+      "primary": true
+    },
+    {
+      "label": "GitHub",
+      "url": "https://github.com/orbit-omen"
+    },
+    {
+      "label": "Instagram",
+      "url": ""
+    }
+  ],
+  "repos": [],
+  "repoHidden": {},
+  "cursors": {
+    "enabled": true,
+    "speed": 650,
+    "list": [
+      {
+        "name": "Yugansh",
+        "color": "#9b6fe0"
+      },
+      {
+        "name": "Orbit",
+        "color": "#f08cc0"
+      },
+      {
+        "name": "Omen",
+        "color": "#6fb7e0"
+      },
+      {
+        "name": "Nova",
+        "color": "#f0c06f"
+      }
+    ],
+    "sections": {
+      "hero": {
+        "enabled": true,
+        "count": 2,
+        "assign": {},
+        "blueprint": true
+      },
+      "about": {
+        "enabled": true,
+        "count": 1,
+        "assign": {},
+        "blueprint": true
+      },
+      "projects": {
+        "enabled": true,
+        "count": 2,
+        "assign": {},
+        "blueprint": true
+      },
+      "services": {
+        "enabled": true,
+        "count": 1,
+        "assign": {},
+        "blueprint": true
+      },
+      "videos": {
+        "enabled": true,
+        "count": 1,
+        "assign": {},
+        "blueprint": true
+      },
+      "updates": {
+        "enabled": true,
+        "count": 1,
+        "assign": {},
+        "blueprint": true
+      },
+      "contact": {
+        "enabled": true,
+        "count": 1,
+        "assign": {},
+        "blueprint": true
+      },
+      "skin": {
+        "enabled": true,
+        "count": 1,
+        "assign": {},
+        "blueprint": true
+      }
+    },
+    "blueprint": true,
+    "swarm": 14,
+    "idle": 30
+  },
+  "siteRepo": "orbit-omen/orbit-omen.github.io",
+  "siteBranch": "main",
+  "logo": "",
+  "favicon": "",
+  "heroBg": "",
+  "bg": {},
+  "repoImages": {},
+  "heroWord": "PORTFOLIO",
+  "heroImage": "",
+  "stats": [],
+  "skin": {
+    "enabled": true,
+    "file": "",
+    "model": "classic",
+    "mirror": false,
+    "spin": 1,
+    "idle": true
+  }
+}
