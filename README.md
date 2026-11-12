@@ -57,3 +57,12 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - Global design tokens control accent colors, background/surface/text colors, font family, content width, base size, corner radius and section spacing.
 - The reusable component library supports text, CTA, quote, image and divider templates. Custom pages can reference saved components; updates to a saved component are reflected in linked page blocks.
 - All navigation, design-system and component changes are stored in the shared portfolio configuration and published through the existing GitHub publish flow.
+
+
+## Orbit Studio — SEO, Contact & Analytics
+
+- SEO settings include a page title, meta description, canonical URL, social preview image, X/Twitter handle and a no-index switch.
+- Static homepage metadata provides a useful baseline before the browser loads the portfolio configuration. Studio settings update the rendered document metadata at runtime; search engines may not treat JavaScript-generated metadata exactly like server-rendered HTML.
+- The optional public contact form uses a Formspree HTTPS endpoint. GitHub Pages does not run server-side form code. Form submissions are sent to the configured provider; configure its inbox, spam protection and privacy notice separately.
+- Optional analytics supports Google Analytics 4 measurement IDs and Plausible domains. Analytics is off by default and loads only when enabled with a valid identifier. Site owners are responsible for applicable visitor consent, disclosure and privacy requirements.
+- Do not store API keys, passwords or private credentials in the public portfolio configuration.
