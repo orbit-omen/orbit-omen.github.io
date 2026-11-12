@@ -46,20 +46,27 @@
     const b=branch||importedBranch;
     if(!token||!repo)throw new Error("Connect GitHub first.");
     if(!b||b!==importedBranch)throw new Error("Import the branch you want to roll back first.");
+    if(!/^[a-f0-9]{40}$/i.test(commitSha))throw new Error("Invalid commit SHA.");
     const target=await request("/repos/"+REPO+"/commits/"+commitSha);
     if(!target.parents?.length)throw new Error("This commit has no parent to restore from.");
+    const changedFiles=target.files||[];
+    if(!changedFiles.length)throw new Error("GitHub returned no changed files for this commit.");
+    const allowed=path=>path==="data/portfolio.json"||path==="sitemap.xml"||path==="robots.txt"||path==="blog/index.html"||path.startsWith("blog/");
+    const unsafe=changedFiles.filter(file=>!allowed(file.filename));
+    if(unsafe.length)throw new Error("Safety stop: this commit also changes non-publication files ("+unsafe.slice(0,4).map(f=>f.filename).join(", ")+"). Only Studio publication commits can be rolled back here.");
     const previous=await request("/repos/"+REPO+"/git/commits/"+target.parents[0].sha);
     const oldTree=await request("/repos/"+REPO+"/git/trees/"+previous.tree.sha+"?recursive=1");
+    if(oldTree.truncated)throw new Error("The previous repository tree is too large to verify safely. Use GitHub's revert workflow instead.");
     const oldEntries=new Map((oldTree.tree||[]).map(x=>[x.path,x]));
-    const changed=(target.files||[]).map(file=>{const old=oldEntries.get(file.filename);return old?{path:file.filename,mode:old.mode,type:old.type,sha:old.sha}:{path:file.filename,mode:"100644",type:"blob",sha:null};});
-    if(!changed.length)throw new Error("GitHub returned no changed files for this commit.");
+    const changed=changedFiles.map(file=>{const old=oldEntries.get(file.filename);return old?{path:file.filename,mode:old.mode,type:old.type,sha:old.sha}:{path:file.filename,mode:"100644",type:"blob",sha:null};});
     const ref=await request("/repos/"+REPO+"/git/ref/heads/"+encodeURIComponent(b));
     const current=await request("/repos/"+REPO+"/git/commits/"+ref.object.sha);
     const tree=await request("/repos/"+REPO+"/git/trees",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base_tree:current.tree.sha,tree:changed})});
-    const commit=await request("/repos/"+REPO+"/git/commits",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Revert publication "+commitSha.slice(0,7),tree:tree.sha,parents:[ref.object.sha]})});
+    const commit=await request("/repos/"+REPO+"/git/commits",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Revert Studio publication "+commitSha.slice(0,7),tree:tree.sha,parents:[ref.object.sha]})});
     await request("/repos/"+REPO+"/git/refs/heads/"+encodeURIComponent(b),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({sha:commit.sha,force:false})});
-    const configFile=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(b));importedSha=configFile.sha;currentConfig=JSON.parse(decodeUtf8Base64(configFile.content));$("json-editor").value=JSON.stringify(currentConfig,null,2);$("import-sha").textContent=short(importedSha);window.dispatchEvent(new CustomEvent("orbit:config-imported"));
-    activity("Reverted "+changed.length+" files from commit "+short(commitSha)+". New commit "+short(commit.sha)+".");
+    const configFile=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(b));
+    importedSha=configFile.sha;currentConfig=JSON.parse(decodeUtf8Base64(configFile.content));$("json-editor").value=JSON.stringify(currentConfig,null,2);$("import-sha").textContent=short(importedSha);window.dispatchEvent(new CustomEvent("orbit:config-imported"));
+    activity("Reverted "+changed.length+" publication files from "+short(commitSha)+". New commit "+short(commit.sha)+".");
     return {commit:commit.sha,files:changed.length};
   }
   function disconnect(){token="";repo=null;importedSha="";importedBranch="";status(false);$("token").value="";$("json-editor").disabled=true;$("publish").disabled=true;$("publish-top").disabled=true;$("save-local").disabled=true;$("stat-content").textContent="Not imported";$("stat-status").textContent="No changes";$("file-badge").textContent="NOT IMPORTED";feedback("auth-feedback","Disconnected. The token has been cleared from memory.");activity("GitHub disconnected.");}
