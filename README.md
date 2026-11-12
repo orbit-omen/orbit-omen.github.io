@@ -1,24 +1,31 @@
-# OrbitOmen Studio — GitHub Pages foundation
+# OrbitOmen Portfolio & Studio
 
-This release provides a working static portfolio and a browser-based content Studio.
+A static GitHub Pages portfolio with a browser-based Studio.
 
-## URLs
-- Public site: `https://orbit-omen.github.io/`
-- Studio: `https://orbit-omen.github.io/studio/`
+## Live routes
+- Public portfolio: https://orbit-omen.github.io/
+- Studio: https://orbit-omen.github.io/studio/
+- Visual canvas prototype: https://orbit-omen.github.io/studio/canvas.html
 
-## Deploy
-1. Put the contents of this folder at the root of the `orbit-omen/orbit-omen.github.io` repository.
-2. Set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**.
-3. Push to `main` or run **Deploy OrbitOmen Website** from Actions.
+## Repository architecture
+- `data/portfolio.json` is the portfolio configuration source of truth.
+- `assets/site.js` loads that configuration to render the public homepage.
+- `studio/` contains the browser-based editing workspace.
+- `assets/` contains shared visual styles and site assets.
 
-## Use Studio
-Open `/studio/`. Edit content and projects. Click **Save changes**. The Studio stores data in this browser's LocalStorage. Export JSON for backup. To publish content to visitors, update the site's deployed content/config and push the changes to GitHub.
+## Studio: GitHub sync foundation
+1. Open Studio → GitHub sync.
+2. Create a fine-grained GitHub token restricted to `orbit-omen/orbit-omen.github.io`.
+3. Grant **Contents: Read and write**.
+4. Paste the token and connect.
+5. Import `data/portfolio.json`, edit the configuration, validate, and publish.
 
-## Important limitations
-This is a functional static foundation, not the complete SaaS platform in the larger master specification. There is no server-side authentication, shared multi-user persistence, Discord integration, Cloudflare Worker, GitHub API commit flow, true drag/drop canvas, or keyframe animation timeline in this release. Never store credentials or secrets in this static app. Add a separately secured backend before treating Studio as private.
+The token is held in JavaScript memory for the current page session only. It is not written to localStorage, website files, or commits. Disconnecting or reloading the page clears it. A browser-only Studio cannot protect a token from malicious JavaScript running on the same page, so use a narrowly scoped token and revoke it when no longer needed. A future backend/OAuth integration is preferable for persistent sessions.
 
-## Checks
+Publishing currently updates only `data/portfolio.json` on the selected, imported branch. The Studio checks the remote file SHA before writing to avoid overwriting a newer edit. It does not overwrite unrelated files.
+
+## Deployment
+The repository currently has no `.github/workflows/deploy.yml` workflow. Verify **Settings → Pages → Build and deployment** to determine whether Pages is configured for branch deployment or GitHub Actions before changing deployment configuration.
+
+## Development checks
 Run `npm run check` with Node.js installed.
-
-## Visual canvas editor (v0.3)
-Open Studio → Visual canvas. Add headings, text and buttons; select and drag elements; edit text, font size, weight, colors, position and width; duplicate/delete; save the scene in browser LocalStorage or export JSON. This initial canvas is a separate editor workspace and does not yet write the live portfolio DOM or provide responsive layout constraints.

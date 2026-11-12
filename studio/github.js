@@ -1,122 +1,20 @@
 /* GitHub API bridge. Token is held in memory only. */
 (() => {
-  const API = "https://api.github.com";
-  const REPO = "orbit-omen/orbit-omen.github.io";
-  let token = "";
-  let repo = null;
-  let importedSha = "";
-  let importedBranch = "";
-  let currentConfig = null;
-  const headers = () => ({Accept:"application/vnd.github+json",Authorization:"Bearer "+token,"X-GitHub-Api-Version":"2022-11-28"});
-  async function request(path, options={}) {
-    const res = await fetch(API+path,{...options,headers:{...headers(),...(options.headers||{})}});
-    const body = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(body.message || ("GitHub API error "+res.status));
-    return body;
-  }
-  function encodeUtf8Base64(value) {
-    const bytes = new TextEncoder().encode(value);
-    let binary = "";
-    for(let i=0;i<bytes.length;i+=0x8000) binary += String.fromCharCode(...bytes.subarray(i,i+0x8000));
-    return btoa(binary);
-  }
-  function decodeUtf8Base64(value) {
-    const binary = atob(value.replace(/\n/g,""));
-    const bytes = Uint8Array.from(binary,c=>c.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
-  }
-  const short = s => s ? s.slice(0,7) : "—";
-  const $ = id => document.getElementById(id);
-  function status(connected) {
-    $("connection-state").classList.toggle("connected",connected);
-    $("connection-state").innerHTML = connected ? "<i></i> GITHUB CONNECTED" : "<i></i> NOT CONNECTED";
-    $("stat-repo").textContent = connected ? REPO : "Not connected";
-    $("disconnect").hidden = !connected;
-    $("import").disabled = !connected;
-    $("branch").disabled = !connected;
-    $("commit-message").disabled = !connected;
-  }
-  function activity(message) { $("activity").textContent = message; }
-  function feedback(id,message,error=false) { const el=$(id);el.textContent=message;el.style.color=error?"#ff9fbd":"#9be6b3"; }
-  async function connect(value) {
-    token=value.trim();
-    if(!token) throw new Error("Paste a GitHub fine-grained token first.");
-    const [me,r] = await Promise.all([request("/user"),request("/repos/"+REPO)]);
-    if(!r.permissions?.push) throw new Error("This GitHub account does not have push access to the target repository.");
-    repo=r;
-    $("default-branch").textContent=r.default_branch;
-    $("branch").value=r.default_branch;
-    $("stat-repo").textContent=REPO;
-    status(true);
-    feedback("auth-feedback","Connected as @"+me.login+". Repository access verified.");
-    activity("Connected to GitHub as @"+me.login+".");
-    $("publish-top").disabled = !currentConfig;
-    return r;
-  }
-  async function importConfig() {
-    if(!token || !repo) throw new Error("Connect GitHub before importing.");
-    const branch=$("branch").value.trim() || repo.default_branch;
-    const file=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(branch));
-    if(file.type!=="file" || !file.content) throw new Error("data/portfolio.json was not returned as a text file.");
-    const parsed=JSON.parse(decodeUtf8Base64(file.content));
-    currentConfig=parsed;
-    importedSha=file.sha;
-    importedBranch=branch;
-    $("json-editor").value=JSON.stringify(parsed,null,2);
-    $("json-editor").disabled=false;
-    $("save-local").disabled=false;
-    $("file-badge").textContent="IMPORTED";
-    $("import-sha").textContent=short(file.sha);
-    $("stat-content").textContent="Imported";
-    $("stat-status").textContent="Clean";
-    $("validation-state").textContent="Valid JSON · imported from "+branch;
-    $("editor-path").textContent="data/portfolio.json  ·  "+branch;
-    $("publish").disabled=false;
-    $("publish-top").disabled=false;
-    feedback("auth-feedback","Imported data/portfolio.json from "+branch+".");
-    activity("Imported portfolio configuration from "+branch+" ("+short(file.sha)+").");
-    return parsed;
-  }
-  function validate() {
-    try { currentConfig=JSON.parse($("json-editor").value); $("validation-state").textContent="Valid JSON"; $("stat-status").textContent="Ready to publish"; return true; }
-    catch(e) { $("validation-state").textContent="JSON error: "+e.message; $("stat-status").textContent="Invalid JSON"; return false; }
-  }
-  function saveLocal() {
-    if(!validate()) return false;
-    localStorage.setItem("orbit-studio-draft",JSON.stringify(currentConfig));
-    $("stat-status").textContent="Draft saved";
-    activity("Saved a local browser draft. No GitHub files changed.");
-    return true;
-  }
-  async function publish() {
-    if(!token || !repo) throw new Error("Connect GitHub first.");
-    if(!validate()) throw new Error("Fix the JSON validation error before publishing.");
-    if(!importedSha) throw new Error("Import the current repository file before publishing.");
-    const branch=$("branch").value.trim() || repo.default_branch;
-    if(branch!==importedBranch) throw new Error("The selected branch differs from the imported branch. Import that branch first.");
-    const latest=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(branch));
-    if(latest.sha!==importedSha) throw new Error("The remote file changed since import. Import the latest version and re-apply your edits to avoid overwriting someone else's work.");
-    const message=$("commit-message").value.trim() || "Update OrbitOmen portfolio content";
-    const body=JSON.stringify(currentConfig,null,2)+"\n";
-    const saved=await request("/repos/"+REPO+"/contents/data/portfolio.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,content:encodeUtf8Base64(body),sha:importedSha,branch})});
-    importedSha=saved.content.sha;
-    $("import-sha").textContent=short(importedSha);
-    $("stat-status").textContent="Published";
-    $("validation-state").textContent="Published successfully · "+short(saved.commit.sha);
-    $("publish").disabled=true;$("publish-top").disabled=true;
-    activity("Published data/portfolio.json to "+branch+" · commit "+short(saved.commit.sha)+".");
-    return saved;
-  }
-  function disconnect() {
-    token="";repo=null;importedSha="";importedBranch="";
-    status(false);
-    $("token").value="";
-    $("json-editor").disabled=true;
-    $("publish").disabled=true;$("publish-top").disabled=true;$("save-local").disabled=true;
-    $("stat-content").textContent="Not imported";$("stat-status").textContent="No changes";
-    $("file-badge").textContent="NOT IMPORTED";
-    feedback("auth-feedback","Disconnected. The token has been cleared from memory.");
-    activity("GitHub disconnected.");
-  }
-  window.OrbitGitHub={connect,importConfig,validate,saveLocal,publish,disconnect,getConfig:()=>currentConfig};
+  const API="https://api.github.com",REPO="orbit-omen/orbit-omen.github.io";
+  let token="",repo=null,importedSha="",importedBranch="",currentConfig=null;
+  const headers=()=>({Accept:"application/vnd.github+json",Authorization:"Bearer "+token,"X-GitHub-Api-Version":"2022-11-28"});
+  async function request(path,options={}){const res=await fetch(API+path,{...options,headers:{...headers(),...(options.headers||{})}});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.message||("GitHub API error "+res.status));return body;}
+  function encodeUtf8Base64(value){const bytes=new TextEncoder().encode(value);let binary="";for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
+  function decodeUtf8Base64(value){const binary=atob(value.replace(/\n/g,""));return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)));}
+  const short=s=>s?s.slice(0,7):"—", $=id=>document.getElementById(id);
+  function status(connected){$("connection-state").classList.toggle("connected",connected);$("connection-state").innerHTML=connected?"<i></i> GITHUB CONNECTED":"<i></i> NOT CONNECTED";$("stat-repo").textContent=connected?REPO:"Not connected";$("disconnect").hidden=!connected;$("import").disabled=!connected;$("branch").disabled=!connected;$("commit-message").disabled=!connected;}
+  function activity(message){$("activity").textContent=message;}
+  function feedback(id,message,error=false){const el=$(id);el.textContent=message;el.style.color=error?"#ff9fbd":"#9be6b3";}
+  async function connect(value){token=value.trim();if(!token)throw new Error("Paste a GitHub fine-grained token first.");const r=await request("/repos/"+REPO);if(!r.permissions?.push)throw new Error("This GitHub account does not have push access to the target repository.");repo=r;$("default-branch").textContent=r.default_branch;$("branch").value=r.default_branch;status(true);feedback("auth-feedback","Repository access verified. Connected to "+REPO+".");activity("Connected to GitHub repository "+REPO+".");$("publish-top").disabled=!currentConfig;return r;}
+  async function importConfig(){if(!token||!repo)throw new Error("Connect GitHub before importing.");const branch=$("branch").value.trim()||repo.default_branch;const file=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(branch));if(file.type!=="file"||!file.content)throw new Error("data/portfolio.json was not returned as a text file.");const parsed=JSON.parse(decodeUtf8Base64(file.content));currentConfig=parsed;importedSha=file.sha;importedBranch=branch;$("json-editor").value=JSON.stringify(parsed,null,2);$("json-editor").disabled=false;$("save-local").disabled=false;$("file-badge").textContent="IMPORTED";$("import-sha").textContent=short(file.sha);$("stat-content").textContent="Imported";$("stat-status").textContent="Clean";$("validation-state").textContent="Valid JSON · imported from "+branch;$("editor-path").textContent="data/portfolio.json · "+branch;$("publish").disabled=false;$("publish-top").disabled=false;feedback("auth-feedback","Imported data/portfolio.json from "+branch+".");activity("Imported portfolio configuration from "+branch+" ("+short(file.sha)+").");return parsed;}
+  function validate(){try{currentConfig=JSON.parse($("json-editor").value);$("validation-state").textContent="Valid JSON";$("stat-status").textContent="Ready to publish";return true;}catch(e){$("validation-state").textContent="JSON error: "+e.message;$("stat-status").textContent="Invalid JSON";return false;}}
+  function saveLocal(){if(!validate())return false;localStorage.setItem("orbit-studio-draft",JSON.stringify(currentConfig));$("stat-status").textContent="Draft saved";activity("Saved a local browser draft. No GitHub files changed.");return true;}
+  async function publish(){if(!token||!repo)throw new Error("Connect GitHub first.");if(!validate())throw new Error("Fix the JSON validation error before publishing.");if(!importedSha)throw new Error("Import the current repository file before publishing.");const branch=$("branch").value.trim()||repo.default_branch;if(branch!==importedBranch)throw new Error("The selected branch differs from the imported branch. Import that branch first.");const latest=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(branch));if(latest.sha!==importedSha)throw new Error("The remote file changed since import. Import the latest version and re-apply your edits to avoid overwriting someone else's work.");const message=$("commit-message").value.trim()||"Update OrbitOmen portfolio content";const body=JSON.stringify(currentConfig,null,2)+"\n";const saved=await request("/repos/"+REPO+"/contents/data/portfolio.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,content:encodeUtf8Base64(body),sha:importedSha,branch})});importedSha=saved.content.sha;$("import-sha").textContent=short(importedSha);$("stat-status").textContent="Published";$("validation-state").textContent="Published successfully · "+short(saved.commit.sha);$("publish").disabled=true;$("publish-top").disabled=true;activity("Published data/portfolio.json to "+branch+" · commit "+short(saved.commit.sha)+".");return saved;}
+  function disconnect(){token="";repo=null;importedSha="";importedBranch="";status(false);$("token").value="";$("json-editor").disabled=true;$("publish").disabled=true;$("publish-top").disabled=true;$("save-local").disabled=true;$("stat-content").textContent="Not imported";$("stat-status").textContent="No changes";$("file-badge").textContent="NOT IMPORTED";feedback("auth-feedback","Disconnected. The token has been cleared from memory.");activity("GitHub disconnected.");}
+  window.OrbitGitHub={connect,importConfig,validate,saveLocal,publish,disconnect};
 })();
