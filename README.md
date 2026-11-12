@@ -78,3 +78,13 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - The public journal archive is available at `/?blog=1`; individual entries use `/?content=<slug>`. A Journal navigation link appears when published entries exist.
 - Studio changes remain in the portfolio configuration draft. Publish `data/portfolio.json` to commit the editorial changes to the selected branch. GitHub Pages then serves the updated static content.
 - This is a client-rendered archive, not a server-side CMS. Query-string routes may have weaker search-engine discoverability than generated static HTML pages; per-entry metadata is applied in the browser after configuration loads.
+
+
+## Advanced Publishing & Static Site Generator
+
+- Site publishing generates real static HTML at `/blog/<slug>/` for every published content item, plus a static `/blog/` archive.
+- The generator also creates `sitemap.xml` and `robots.txt` using the configured public HTTPS site URL (defaults to the GitHub Pages URL shown in Studio).
+- Build preview lists every generated file and its size before publishing. Publishing requires explicit confirmation.
+- Generated pages, sitemap, robots file and `data/portfolio.json` are written through the Git Data API as a single commit, so the set is applied atomically. The Studio checks the imported configuration SHA before committing to avoid publishing over a newer configuration.
+- Studio can display recent repository commits. Full rollback controls are not included yet; use GitHub's commit history/revert workflow to restore a prior publication.
+- Clean article URLs are generated as actual directories with `index.html`; the existing query-string routes remain available as compatibility fallbacks.
