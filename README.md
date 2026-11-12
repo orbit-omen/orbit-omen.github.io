@@ -29,3 +29,12 @@ The repository currently has no `.github/workflows/deploy.yml` workflow. Verify 
 
 ## Development checks
 Run `npm run check` with Node.js installed.
+
+
+## Orbit Studio — homepage editing
+
+The Studio now includes a visual **Home** editor for the public homepage. It edits the hero headline and introduction, primary call to action, about copy, section headings, contact destination and footer. Existing section visibility controls are reflected by the public renderer. Project and service cards are rendered from the imported portfolio configuration.
+
+Studio editors share one in-memory configuration object so edits made in Home, Profile, content lists, the page builder and Advanced JSON stay in sync. The public renderer also restricts content links and image URLs to safe web or local URL forms.
+
+Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages does not generate arbitrary pretty routes from the browser editor alone.
