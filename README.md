@@ -66,3 +66,15 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - The optional public contact form uses a Formspree HTTPS endpoint. GitHub Pages does not run server-side form code. Form submissions are sent to the configured provider; configure its inbox, spam protection and privacy notice separately.
 - Optional analytics supports Google Analytics 4 measurement IDs and Plausible domains. Analytics is off by default and loads only when enabled with a valid identifier. Site owners are responsible for applicable visitor consent, disclosure and privacy requirements.
 - Do not store API keys, passwords or private credentials in the public portfolio configuration.
+
+
+## Blog & Publishing Studio
+
+- The Blog & publishing tab manages article, announcement, gallery, release and post entries.
+- Search and filter by type, status, category and publication date; sort by newest, oldest or title.
+- Edit existing entries, change draft/published status, preview public article routes, and delete entries.
+- Per-entry fields include category, tags, cover image, date, summary, body and optional SEO title/description/image.
+- Draft entries are hidden from the public archive and direct article route. Older entries without a status remain published for backwards compatibility.
+- The public journal archive is available at `/?blog=1`; individual entries use `/?content=<slug>`. A Journal navigation link appears when published entries exist.
+- Studio changes remain in the portfolio configuration draft. Publish `data/portfolio.json` to commit the editorial changes to the selected branch. GitHub Pages then serves the updated static content.
+- This is a client-rendered archive, not a server-side CMS. Query-string routes may have weaker search-engine discoverability than generated static HTML pages; per-entry metadata is applied in the browser after configuration loads.
