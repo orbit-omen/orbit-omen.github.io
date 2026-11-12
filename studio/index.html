@@ -1,1 +1,38 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OrbitOmen Studio</title><link rel="stylesheet" href="../assets/studio.css"></head><body><header><a href="../" class="brand">ORBIT<span>OMEN</span></a><div><span class="status"></span> LOCAL WORKSPACE</div><a href="../" target="_blank">View website ↗</a></header><div class="layout"><aside><div class="side-title">STUDIO</div><button class="active" data-tab="content">✦ Content</button><button data-tab="projects">▦ Projects</button><a class="canvas-nav" href="canvas.html">▣ Visual canvas</a><button data-tab="appearance">◈ Appearance</button><button data-tab="publish">⇧ Export & Publish</button><div class="side-note">Changes save in this browser. Export your site and redeploy to publish them.</div></aside><main><div class="topline"><div><small>WORKSPACE / ORBITOMEN</small><h1 id="panel-title">Content editor</h1></div><button class="save" id="save">Save changes</button></div><div id="panel"></div></main></div><script src="studio.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#100b19">
+<title>OrbitOmen Studio</title>
+<link rel="stylesheet" href="../assets/studio-github.css">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="../">ORBIT<span>OMEN</span><small> / STUDIO</small></a><div class="top-actions"><span id="connection-state" class="connection"><i></i> NOT CONNECTED</span><a class="quiet-link" href="../" target="_blank" rel="noopener">View website ↗</a></div></header>
+<div class="shell">
+<aside class="sidebar"><div class="side-label">WORKSPACE</div><button class="nav active" data-view="overview">⌂ <span>Overview</span></button><button class="nav" data-view="content">▤ <span>Content & settings</span></button><button class="nav" data-view="github">⌘ <span>GitHub sync</span></button><div class="sidebar-foot"><span class="orb"></span><div><b>Orbit Studio</b><small>Foundation build · v0.4</small></div></div></aside>
+<main class="main">
+<div class="page-head"><div><div class="eyebrow">ORBITOMEN / CONTROL ROOM</div><h1 id="page-title">Overview</h1><p id="page-subtitle">Your website workspace, repository connection and publishing status.</p></div><button id="publish-top" class="primary" disabled>Publish changes ↗</button></div>
+<div id="notice" class="notice" hidden></div>
+<section id="view-overview" class="view">
+<div class="stats"><article class="stat"><span>REPOSITORY</span><b id="stat-repo">Not connected</b><small>GitHub source</small></article><article class="stat"><span>CONTENT FILE</span><b id="stat-content">Not imported</b><small>data/portfolio.json</small></article><article class="stat"><span>LOCAL STATUS</span><b id="stat-status">No changes</b><small>Browser workspace</small></article></div>
+<div class="grid-two"><article class="panel"><div class="panel-head"><div><div class="eyebrow">FIRST STEP</div><h2>Connect your repository</h2></div><span class="icon">⌘</span></div><p>Connect GitHub with a fine-grained personal access token. Studio will inspect the repository and import the existing portfolio configuration before you edit anything.</p><button class="primary" data-open="github">Connect GitHub</button></article><article class="panel"><div class="eyebrow">HOW PUBLISHING WORKS</div><h2>Your repo stays in control.</h2><ol class="steps"><li>Import the current configuration.</li><li>Edit and validate your changes.</li><li>Review the publish summary.</li><li>Commit to your selected branch.</li></ol></article></div>
+<article class="panel"><div class="panel-head"><div><div class="eyebrow">RECENT ACTIVITY</div><h2>Workspace activity</h2></div></div><div id="activity" class="activity">No activity yet. Connect GitHub to begin.</div></article>
+</section>
+<section id="view-content" class="view" hidden>
+<article class="panel editor-panel"><div class="panel-head"><div><div class="eyebrow">CONTENT SOURCE</div><h2>Portfolio configuration</h2><p>Edit the actual data file used by your website.</p></div><span id="file-badge" class="badge">NOT IMPORTED</span></div>
+<div class="editor-toolbar"><span id="editor-path">data/portfolio.json</span><div><button class="secondary" id="format-json">Format JSON</button><button class="secondary" id="validate-json">Validate</button></div></div>
+<textarea id="json-editor" spellcheck="false" aria-label="Portfolio JSON editor" placeholder="Connect GitHub and import data/portfolio.json to begin." disabled></textarea>
+<div class="editor-foot"><span id="validation-state">Waiting for repository import.</span><button class="primary" id="save-local" disabled>Save local draft</button></div></article>
+</section>
+<section id="view-github" class="view" hidden>
+<div class="grid-two"><article class="panel"><div class="eyebrow">AUTHENTICATION</div><h2>Connect GitHub</h2><p>Use a fine-grained token restricted to this repository. Required repository permission: Contents — Read and write. The token stays in memory for this browser session and is never saved to localStorage or committed.</p>
+<label class="field-label" for="token">Personal access token</label><input id="token" type="password" autocomplete="off" placeholder="github_pat_…" />
+<div class="field-hint">Create a fine-grained token for <b>orbit-omen/orbit-omen.github.io</b>. Do not paste a classic token with broad account access.</div>
+<button class="primary" id="connect">Connect & inspect repository</button><button class="secondary" id="disconnect" hidden>Disconnect</button><div id="auth-feedback" class="feedback"></div></article>
+<article class="panel"><div class="eyebrow">REPOSITORY TARGET</div><h2>Import settings</h2><div class="repo-line"><span>Repository</span><b>orbit-omen/orbit-omen.github.io</b></div><div class="repo-line"><span>Configuration file</span><b>data/portfolio.json</b></div><div class="repo-line"><span>Default branch</span><b id="default-branch">—</b></div><div class="repo-line"><span>Imported revision</span><b id="import-sha">—</b></div><button class="secondary" id="import" disabled>Import latest settings</button></article></div>
+<article class="panel"><div class="panel-head"><div><div class="eyebrow">PUBLISH TARGET</div><h2>Commit destination</h2></div></div><label class="field-label" for="branch">Branch</label><input id="branch" value="main" disabled><label class="field-label" for="commit-message">Commit message</label><input id="commit-message" value="Update OrbitOmen portfolio content" disabled><p class="field-hint">Publishing writes only the imported portfolio configuration in this foundation build. Other files are preserved.</p><button class="primary" id="publish" disabled>Review & publish ↗</button><div id="publish-feedback" class="feedback"></div></article>
+</section>
+</main></div>
+<script src="github.js"></script><script src="studio.js"></script>
+</body></html>
