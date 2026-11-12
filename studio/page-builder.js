@@ -24,6 +24,7 @@ document.querySelectorAll("[data-device]").forEach(b=>b.onclick=()=>{$("page-pre
 $("page-title-input").addEventListener("input",()=>{if(active>=0){pages()[active].title=$("page-title-input").value;renderPreview()}});
 $("page-description-input").addEventListener("input",()=>{if(active>=0){pages()[active].description=$("page-description-input").value;renderPreview()}});
 window.addEventListener("orbit:config-imported",()=>{config=window.OrbitGitHub.getConfig();renderList();refreshComponentOptions()});
+window.addEventListener("orbit:components-updated",()=>{config=window.OrbitGitHub.getConfig();refreshComponentOptions();if(active>=0)renderBlocks()});
 document.querySelector('[data-content-tab="pages"]').addEventListener("click",()=>{config=window.OrbitGitHub.getConfig();if(config){renderList();refreshComponentOptions()}});
 function refreshComponentOptions(){const select=$("saved-component-select");if(!select)return;select.replaceChildren(new Option("Saved component…",""));(config?.components||[]).forEach(c=>select.add(new Option(c.name||c.type,c.id)));}
 $("insert-saved-component").onclick=()=>{if(active<0)return;const id=$("saved-component-select").value;if(!id)return;pages()[active].blocks.push({type:"component",componentId:id});renderBlocks();};
