@@ -58,7 +58,7 @@
     const tree=await request("/repos/"+REPO+"/git/trees",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base_tree:current.tree.sha,tree:changed})});
     const commit=await request("/repos/"+REPO+"/git/commits",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Revert publication "+commitSha.slice(0,7),tree:tree.sha,parents:[ref.object.sha]})});
     await request("/repos/"+REPO+"/git/refs/heads/"+encodeURIComponent(b),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({sha:commit.sha,force:false})});
-    const configFile=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(b));importedSha=configFile.sha;$("import-sha").textContent=short(importedSha);
+    const configFile=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(b));importedSha=configFile.sha;currentConfig=JSON.parse(decodeUtf8Base64(configFile.content));$("json-editor").value=JSON.stringify(currentConfig,null,2);$("import-sha").textContent=short(importedSha);window.dispatchEvent(new CustomEvent("orbit:config-imported"));
     activity("Reverted "+changed.length+" files from commit "+short(commitSha)+". New commit "+short(commit.sha)+".");
     return {commit:commit.sha,files:changed.length};
   }
