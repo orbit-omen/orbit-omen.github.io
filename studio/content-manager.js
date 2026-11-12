@@ -16,7 +16,7 @@ host.querySelectorAll("[data-remove]").forEach(el=>el.addEventListener("click",(
 }
 function add(kind){config[kind]=config[kind]||[];const defaults={projects:{title:"New project",category:"Project",description:"",url:"",image:"",tags:[]},services:{title:"New service",description:""},updates:{title:"New update",date:new Date().toISOString().slice(0,10),category:"Update",text:"",url:""},links:{label:"New link",url:"",primary:false}};config[kind].push(defaults[kind]);renderList(kind);sync();}
 function switchTab(name){document.querySelectorAll(".content-tab").forEach(b=>b.classList.toggle("active",b.dataset.contentTab===name));document.querySelectorAll(".content-pane").forEach(p=>p.hidden=p.id!=="content-"+name);}
-function load(value){if(!value)return;config=clone(value);bindProfile();renderToggles();["projects","services","updates","links"].forEach(renderList);renderPreview();renderCounts();switchTab("profile");}
+function load(value){if(!value)return;config=value;bindProfile();renderToggles();["projects","services","updates","links"].forEach(renderList);renderPreview();renderCounts();switchTab("profile");}
 document.querySelectorAll(".content-tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.contentTab)));
 $("add-project").addEventListener("click",()=>add("projects"));$("add-service").addEventListener("click",()=>add("services"));$("add-update").addEventListener("click",()=>add("updates"));$("add-link").addEventListener("click",()=>add("links"));
 $("content-save").addEventListener("click",()=>{if(window.OrbitGitHub.saveLocal()){$("stat-status").textContent="Draft saved";}});
