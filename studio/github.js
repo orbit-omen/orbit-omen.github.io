@@ -51,6 +51,7 @@
     if(!target.parents?.length)throw new Error("This commit has no parent to restore from.");
     const changedFiles=target.files||[];
     if(!changedFiles.length)throw new Error("GitHub returned no changed files for this commit.");
+    if(changedFiles.length>=300)throw new Error("This commit exceeds GitHub complete changed-file listing. Use GitHub revert instead.");
     const allowed=path=>path==="data/portfolio.json"||path==="sitemap.xml"||path==="robots.txt"||path==="blog/index.html"||path.startsWith("blog/");
     const unsafe=changedFiles.filter(file=>!allowed(file.filename));
     if(unsafe.length)throw new Error("Safety stop: this commit also changes non-publication files ("+unsafe.slice(0,4).map(f=>f.filename).join(", ")+"). Only Studio publication commits can be rolled back here.");
