@@ -20,5 +20,5 @@ function load(value){if(!value)return;config=value;bindProfile();renderToggles()
 document.querySelectorAll(".content-tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.contentTab)));
 $("add-project").addEventListener("click",()=>add("projects"));$("add-service").addEventListener("click",()=>add("services"));$("add-update").addEventListener("click",()=>add("updates"));$("add-link").addEventListener("click",()=>add("links"));
 $("content-save").addEventListener("click",()=>{if(window.OrbitGitHub.saveLocal()){$("stat-status").textContent="Draft saved";}});
-window.OrbitContentManager={load};
+window.OrbitContentManager={load,getConfig:()=>config,refresh(){if(config){renderPreview();renderCounts();}}};
 })();
