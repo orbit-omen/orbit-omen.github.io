@@ -17,3 +17,13 @@ body{background:var(--ds-background,var(--bg));color:var(--ds-text,var(--text));
  nav .studio-link{padding:8px 11px;font-size:10px}
  .hero{padding-top:205px}
 }
+
+
+/* Phase 8: contact form */
+.orbit-contact-form{display:grid;gap:14px;max-width:620px;margin-top:30px;padding:24px;border:1px solid var(--line);border-radius:var(--ds-radius,20px);background:color-mix(in srgb,var(--panel) 82%,transparent)}
+.orbit-contact-form label{display:grid;gap:8px;color:var(--muted);font-size:12px}
+.orbit-contact-form input,.orbit-contact-form textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#ffffff08;color:var(--text);font:inherit;resize:vertical}
+.orbit-contact-form input:focus,.orbit-contact-form textarea:focus{outline:2px solid var(--purple);outline-offset:2px}
+.orbit-contact-form button{justify-self:start;border:0;cursor:pointer}
+.orbit-contact-form button:disabled{opacity:.55;cursor:wait}
+.contact-form-status{min-height:1.4em;color:var(--muted);font-size:13px}
