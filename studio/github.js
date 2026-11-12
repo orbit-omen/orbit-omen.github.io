@@ -18,6 +18,29 @@
   function requireMediaAccess(){if(!token||!repo)throw new Error("Connect GitHub before using the Media Library.");return $("branch").value.trim()||repo.default_branch;}
   async function listMedia(){const branch=requireMediaAccess();let items;try{items=await request("/repos/"+REPO+"/contents/assets/media?ref="+encodeURIComponent(branch));}catch(e){if(/404|Not Found/i.test(e.message))return [];throw e;}if(!Array.isArray(items))return [];return items.filter(x=>x.type==="file").map(x=>({name:x.name,path:x.path,size:x.size,url:x.download_url||"",sha:x.sha})).sort((a,b)=>a.name.localeCompare(b.name));}
   async function uploadMedia(file){const branch=requireMediaAccess();if(!(file instanceof File))throw new Error("Choose a valid file.");if(file.size>20*1024*1024)throw new Error(file.name+" is larger than the 20 MB per-file Studio limit.");if(file.size===0)throw new Error(file.name+" is empty.");const ext=file.name.split(".").pop().toLowerCase();if(["html","htm","xhtml","js","mjs","cjs","svg","xml","xsl","mhtml","hta"].includes(ext))throw new Error("This file type can execute active content and is blocked from the public media folder.");const clean=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"").slice(-100)||"upload.bin";const stamp=Date.now().toString(36);const path="assets/media/"+stamp+"-"+clean;const bytes=new Uint8Array(await file.arrayBuffer());let binary="";for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const content=btoa(binary);const saved=await request("/repos/"+REPO+"/contents/"+path.split("/").map(encodeURIComponent).join("/") ,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Add media: "+clean,content,branch})});return {name:clean,path,url:saved.content?.download_url||("https://raw.githubusercontent.com/"+REPO+"/"+encodeURIComponent(branch)+"/"+path),size:file.size,sha:saved.content?.sha,commit:saved.commit?.sha};}
+  async function publishFiles(files,expectedSha,branch,message){
+    if(!token||!repo)throw new Error("Connect GitHub first.");
+    if(!Array.isArray(files)||!files.length)throw new Error("There are no generated files to publish.");
+    if(branch!==importedBranch)throw new Error("Import the selected branch before publishing.");
+    const latest=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(branch));
+    if(latest.sha!==expectedSha||latest.sha!==importedSha)throw new Error("The remote portfolio configuration changed. Re-import before publishing.");
+    const ref=await request("/repos/"+REPO+"/git/ref/heads/"+encodeURIComponent(branch));
+    const parent=ref.object.sha;
+    const parentCommit=await request("/repos/"+REPO+"/git/commits/"+parent);
+    const blobs=[];
+    for(const file of files){
+      if(!file.path||file.path.startsWith("/")||file.path.split("/").includes(".."))throw new Error("Unsafe generated file path: "+file.path);
+      const blob=await request("/repos/"+REPO+"/git/blobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content:file.content,encoding:"utf-8"})});
+      blobs.push({path:file.path,mode:"100644",type:"blob",sha:blob.sha});
+    }
+    const tree=await request("/repos/"+REPO+"/git/trees",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base_tree:parentCommit.tree.sha,tree:blobs})});
+    const commit=await request("/repos/"+REPO+"/git/commits",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:message||"Publish OrbitOmen website",tree:tree.sha,parents:[parent]})});
+    await request("/repos/"+REPO+"/git/refs/heads/"+encodeURIComponent(branch),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({sha:commit.sha,force:false})});
+    const refreshed=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(branch));
+    importedSha=refreshed.sha;$("import-sha").textContent=short(importedSha);$("stat-status").textContent="Published";activity("Published "+files.length+" files in one commit · "+short(commit.sha)+".");
+    return {commit:commit.sha,files:files.length};
+  }
+  async function recentCommits(branch){const b=branch||importedBranch;if(!b)throw new Error("Import a branch first.");return request("/repos/"+REPO+"/commits?sha="+encodeURIComponent(b)+"&per_page=12");}
   function disconnect(){token="";repo=null;importedSha="";importedBranch="";status(false);$("token").value="";$("json-editor").disabled=true;$("publish").disabled=true;$("publish-top").disabled=true;$("save-local").disabled=true;$("stat-content").textContent="Not imported";$("stat-status").textContent="No changes";$("file-badge").textContent="NOT IMPORTED";feedback("auth-feedback","Disconnected. The token has been cleared from memory.");activity("GitHub disconnected.");}
-  window.OrbitGitHub={connect,importConfig,validate,saveLocal,publish,listMedia,uploadMedia,disconnect,getConfig:()=>currentConfig,setConfig(value){currentConfig=value;$('json-editor').value=JSON.stringify(value,null,2);$("validation-state").textContent="Valid JSON · unsaved edits";$("stat-status").textContent="Unsaved edits";$("publish").disabled=false;$("publish-top").disabled=false;return true;}};
+  window.OrbitGitHub={connect,importConfig,validate,saveLocal,publish,publishFiles,recentCommits,listMedia,uploadMedia,disconnect,getConfig:()=>currentConfig,setConfig(value){currentConfig=value;$('json-editor').value=JSON.stringify(value,null,2);$("validation-state").textContent="Valid JSON · unsaved edits";$("stat-status").textContent="Unsaved edits";$("publish").disabled=false;$("publish-top").disabled=false;return true;}};
 })();
