@@ -38,3 +38,14 @@ The Studio now includes a visual **Home** editor for the public homepage. It edi
 Studio editors share one in-memory configuration object so edits made in Home, Profile, content lists, the page builder and Advanced JSON stay in sync. The public renderer also restricts content links and image URLs to safe web or local URL forms.
 
 Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages does not generate arbitrary pretty routes from the browser editor alone.
+
+
+## Orbit Studio — Media Library & Universal Creator
+
+- The Media Library lists files in `assets/media/` on the selected repository branch.
+- Uploads are committed directly to that branch. The current Studio limit is 20 MB per file.
+- Active-content extensions such as HTML, JavaScript and SVG are blocked from the public media directory. Raster images can be previewed; video/audio and other files are listed with file-type labels.
+- The Universal Creator stores articles, announcements, gallery entries, release notes and general posts in the `contentItems` array inside `data/portfolio.json`.
+- After publishing the portfolio configuration, each content item can be viewed at `/?content=<slug>`.
+- Media uploads create their own Git commits; content drafts remain local until the portfolio configuration is published.
+- The Media Library requires a connected GitHub session with Contents read/write permission. The token remains in memory only.
