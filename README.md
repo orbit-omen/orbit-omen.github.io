@@ -84,7 +84,7 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 
 - Site publishing generates real static HTML at `/blog/<slug>/` for every published content item, plus a static `/blog/` archive.
 - The generator also creates `sitemap.xml` and `robots.txt` using the configured public HTTPS site URL (defaults to the GitHub Pages URL shown in Studio).
-- Build preview lists every generated file and its size before publishing. Publishing requires explicit confirmation.
+- Build preview lists every generated file and its size before publishing. Publishing requires explicit confirmation and rejects stale previews if the draft, selected branch or imported configuration revision changes.
 - Generated pages, sitemap, robots file and `data/portfolio.json` are written through the Git Data API as a single commit, so the set is applied atomically. The Studio checks the imported configuration SHA before committing to avoid publishing over a newer configuration.
-- Studio can display recent repository commits. Full rollback controls are not included yet; use GitHub's commit history/revert workflow to restore a prior publication.
+- Studio displays recent repository commits and can selectively roll back Studio publication commits. Rollback creates a new commit, restores only `data/portfolio.json`, `blog/`, `sitemap.xml` and `robots.txt`, and refuses commits that also modify application/source files. Commits with incomplete GitHub file listings are rejected.
 - Clean article URLs are generated as actual directories with `index.html`; the existing query-string routes remain available as compatibility fallbacks.
