@@ -27,3 +27,17 @@ body{background:var(--ds-background,var(--bg));color:var(--ds-text,var(--text));
 .orbit-contact-form button{justify-self:start;border:0;cursor:pointer}
 .orbit-contact-form button:disabled{opacity:.55;cursor:wait}
 .contact-form-status{min-height:1.4em;color:var(--muted);font-size:13px}
+
+
+/* Phase 9: public journal */
+.blog-archive>h1{font-size:clamp(42px,7vw,76px);letter-spacing:-.055em;margin:12px 0}
+.blog-archive>p:not(.tag){max-width:650px;color:var(--muted);line-height:1.8}
+.blog-archive-controls{display:flex;gap:12px;flex-wrap:wrap;margin:30px 0}
+.blog-archive-controls input,.blog-archive-controls select{min-width:220px;padding:12px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit}
+.blog-archive-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px;margin-top:25px}
+.blog-card{overflow:hidden;padding:18px;border:1px solid var(--line);border-radius:var(--ds-radius,20px);background:linear-gradient(145deg,var(--panel),var(--bg))}
+.blog-card>img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-bottom:12px}
+.blog-card h2{font-size:clamp(20px,3vw,28px);letter-spacing:-.03em;margin:10px 0}
+.blog-card>p:not(.tag){color:var(--muted);line-height:1.7}
+.blog-read-link{display:inline-block;margin-top:12px;color:var(--pink)}
+.blog-empty{color:var(--muted);padding:24px 0}
