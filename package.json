@@ -4,6 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "npx serve .",
-    "check": "node --check assets/site.js && node --check studio/github.js && node --check studio/studio.js && node --check studio/seo-contact.js && node --check studio/creator.js && node --check studio/blog-studio.js"
+    "check": "node --check assets/site.js && node --check studio/github.js && node --check studio/studio.js && node --check studio/seo-contact.js && node --check studio/creator.js && node --check studio/blog-studio.js && node --check studio/publishing-studio.js"
   }
 }
