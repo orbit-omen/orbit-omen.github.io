@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id);
 let generated=[],configSha="",generatedConfig="",generatedBranch="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safeBase=value=>{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash)throw new Error("Use a clean HTTPS site URL without credentials, query strings or fragments.");u.pathname=u.pathname.replace(/\/+$/,"")+"/";return u.href;};
-const safeImage=(value,base)=>{if(!value)return "";const u=new URL(value,base);if(!["https:","http:"].includes(u.protocol))throw new Error("Article images must use HTTP(S) URLs or relative paths.");return u.href;};
+const safeImage=(value,base)=>{if(!value)return "";const u=new URL(value,base);if(u.protocol!=="https:")throw new Error("Article images must use HTTP(S) URLs or relative paths.");return u.href;};
 function slug(value){return String(value||"").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70);}
 function article(item,base){
  const title=esc(item.seoTitle||item.title||"Untitled"),description=esc(item.seoDescription||item.excerpt||""),canonical=base+"blog/"+slug(item.slug)+"/",image=safeImage(item.seoImage||item.cover||"",base);
