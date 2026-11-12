@@ -41,6 +41,27 @@
     return {commit:commit.sha,files:files.length};
   }
   async function recentCommits(branch){const b=branch||importedBranch;if(!b)throw new Error("Import a branch first.");return request("/repos/"+REPO+"/commits?sha="+encodeURIComponent(b)+"&per_page=12");}
+
+  async function rollbackCommit(commitSha,branch){
+    const b=branch||importedBranch;
+    if(!token||!repo)throw new Error("Connect GitHub first.");
+    if(!b||b!==importedBranch)throw new Error("Import the branch you want to roll back first.");
+    const target=await request("/repos/"+REPO+"/commits/"+commitSha);
+    if(!target.parents?.length)throw new Error("This commit has no parent to restore from.");
+    const previous=await request("/repos/"+REPO+"/git/commits/"+target.parents[0].sha);
+    const oldTree=await request("/repos/"+REPO+"/git/trees/"+previous.tree.sha+"?recursive=1");
+    const oldEntries=new Map((oldTree.tree||[]).map(x=>[x.path,x]));
+    const changed=(target.files||[]).map(file=>{const old=oldEntries.get(file.filename);return old?{path:file.filename,mode:old.mode,type:old.type,sha:old.sha}:{path:file.filename,mode:"100644",type:"blob",sha:null};});
+    if(!changed.length)throw new Error("GitHub returned no changed files for this commit.");
+    const ref=await request("/repos/"+REPO+"/git/ref/heads/"+encodeURIComponent(b));
+    const current=await request("/repos/"+REPO+"/git/commits/"+ref.object.sha);
+    const tree=await request("/repos/"+REPO+"/git/trees",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base_tree:current.tree.sha,tree:changed})});
+    const commit=await request("/repos/"+REPO+"/git/commits",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Revert publication "+commitSha.slice(0,7),tree:tree.sha,parents:[ref.object.sha]})});
+    await request("/repos/"+REPO+"/git/refs/heads/"+encodeURIComponent(b),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({sha:commit.sha,force:false})});
+    const configFile=await request("/repos/"+REPO+"/contents/data/portfolio.json?ref="+encodeURIComponent(b));importedSha=configFile.sha;$("import-sha").textContent=short(importedSha);
+    activity("Reverted "+changed.length+" files from commit "+short(commitSha)+". New commit "+short(commit.sha)+".");
+    return {commit:commit.sha,files:changed.length};
+  }
   function disconnect(){token="";repo=null;importedSha="";importedBranch="";status(false);$("token").value="";$("json-editor").disabled=true;$("publish").disabled=true;$("publish-top").disabled=true;$("save-local").disabled=true;$("stat-content").textContent="Not imported";$("stat-status").textContent="No changes";$("file-badge").textContent="NOT IMPORTED";feedback("auth-feedback","Disconnected. The token has been cleared from memory.");activity("GitHub disconnected.");}
-  window.OrbitGitHub={connect,importConfig,validate,saveLocal,publish,publishFiles,recentCommits,listMedia,uploadMedia,disconnect,getConfig:()=>currentConfig,getImportedSha:()=>importedSha,setConfig(value){currentConfig=value;$('json-editor').value=JSON.stringify(value,null,2);$("validation-state").textContent="Valid JSON · unsaved edits";$("stat-status").textContent="Unsaved edits";$("publish").disabled=false;$("publish-top").disabled=false;return true;}};
+  window.OrbitGitHub={connect,importConfig,validate,saveLocal,publish,publishFiles,recentCommits,rollbackCommit,listMedia,uploadMedia,disconnect,getConfig:()=>currentConfig,getImportedSha:()=>importedSha,setConfig(value){currentConfig=value;$('json-editor').value=JSON.stringify(value,null,2);$("validation-state").textContent="Valid JSON · unsaved edits";$("stat-status").textContent="Unsaved edits";$("publish").disabled=false;$("publish-top").disabled=false;return true;}};
 })();
