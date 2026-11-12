@@ -49,3 +49,11 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - After publishing the portfolio configuration, each content item can be viewed at `/?content=<slug>`.
 - Media uploads create their own Git commits; content drafts remain local until the portfolio configuration is published.
 - The Media Library requires a connected GitHub session with Contents read/write permission. The token remains in memory only.
+
+
+## Orbit Studio — Navigation & Global Design System
+
+- Navigation Studio edits public navigation labels, destinations, visibility and order.
+- Global design tokens control accent colors, background/surface/text colors, font family, content width, base size, corner radius and section spacing.
+- The reusable component library supports text, CTA, quote, image and divider templates. Custom pages can reference saved components; updates to a saved component are reflected in linked page blocks.
+- All navigation, design-system and component changes are stored in the shared portfolio configuration and published through the existing GitHub publish flow.
