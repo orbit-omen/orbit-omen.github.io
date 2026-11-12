@@ -1,11 +1,12 @@
 (() => {
 const $=id=>document.getElementById(id);
-let generated=[],configSha="";
+let generated=[],configSha="",generatedConfig="",generatedBranch="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const safeBase=value=>{const u=new URL(value);if(u.protocol!=="https:")throw new Error("Use an HTTPS public site URL.");return u.href.endsWith("/")?u.href:u.href+"/";};
+const safeBase=value=>{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash)throw new Error("Use a clean HTTPS site URL without credentials, query strings or fragments.");u.pathname=u.pathname.replace(/\\/+$/,"")+"/";return u.href;};
+const safeImage=(value,base)=>{if(!value)return "";const u=new URL(value,base);if(!["https:","http:"].includes(u.protocol))throw new Error("Article images must use HTTP(S) URLs or relative paths.");return u.href;};
 function slug(value){return String(value||"").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70);}
 function article(item,base){
- const title=esc(item.seoTitle||item.title||"Untitled"),description=esc(item.seoDescription||item.excerpt||""),canonical=base+"blog/"+slug(item.slug)+"/",image=String(item.seoImage||item.cover||"");
+ const title=esc(item.seoTitle||item.title||"Untitled"),description=esc(item.seoDescription||item.excerpt||""),canonical=base+"blog/"+slug(item.slug)+"/",image=safeImage(item.seoImage||item.cover||"",base);
  const body=String(item.body||"").split(/\n{2,}/).map(p=>"<p>"+esc(p).replace(/\n/g,"<br>")+"</p>").join("\n");
  const cover=image?'<img class="cover" src="'+esc(image)+'" alt="'+esc(item.title||"")+'">':"";
  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+title+' — OrbitOmen</title><meta name="description" content="'+description+'"><link rel="canonical" href="'+canonical+'"><meta property="og:title" content="'+title+'"><meta property="og:description" content="'+description+'"><meta property="og:type" content="article">'+(image?'<meta property="og:image" content="'+esc(new URL(image,base).href)+'">':"")+'<link rel="stylesheet" href="../../assets/site.css"><style>.article{max-width:850px;margin:0 auto;padding:110px 7vw;min-height:75vh}.article h1{font-size:clamp(2.5rem,7vw,5rem);line-height:1.05}.article p{line-height:1.9;color:var(--muted)}.cover{width:100%;max-height:480px;object-fit:cover;border-radius:20px;margin:25px 0}.back{color:var(--pink)}</style></head><body><nav><a class="brand" href="../../">ORBIT<span>OMEN</span></a><div class="navlinks"><a href="../../">Home</a><a href="../">Journal</a></div><a class="studio-link" href="../../studio/">Studio ↗</a></nav><main class="article"><p class="tag">'+esc(item.category||item.type||"ARTICLE")+' · '+esc(item.date||"")+'</p><h1>'+title+'</h1><p>'+description+'</p>'+cover+'<div class="article-body">'+body+'</div><p><a class="back" href="../">← Back to journal</a></p></main><footer><a class="brand" href="../../">ORBIT<span>OMEN</span></a><span>© OrbitOmen</span></footer></body></html>';
@@ -17,14 +18,16 @@ function archive(posts,base){
 function build(){
  const config=window.OrbitGitHub.getConfig();if(!config)throw new Error("Import your portfolio configuration first.");
  const base=safeBase($("generator-base-url").value.trim()||"https://orbit-omen.github.io/");
- const posts=(config.contentItems||[]).filter(p=>p.status!=="draft"&&slug(p.slug)).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+ const posts=(config.contentItems||[]).filter(p=>p&&(!p.status||p.status==="published")&&slug(p.slug)).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+ const seen=new Set();for(const post of posts){const key=slug(post.slug);if(seen.has(key))throw new Error("Duplicate article URL slug: "+key+". Give each published article a unique slug.");seen.add(key);}
+ if(config.seo?.noindex)throw new Error("Search indexing is disabled in SEO settings. Turn off noindex before generating a public sitemap.");
  const files=posts.map(p=>({path:"blog/"+slug(p.slug)+"/index.html",content:article(p,base)}));
  files.push({path:"blog/index.html",content:archive(posts,base)});
  const urls=[base,base+"blog/",...posts.map(p=>base+"blog/"+slug(p.slug)+"/"),...(config.pages||[]).filter(p=>slug(p.slug)).map(p=>base+"?page="+encodeURIComponent(p.slug))];
  files.push({path:"sitemap.xml",content:'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(u=>'<url><loc>'+esc(u)+'</loc></url>').join("\n")+'\n</urlset>\n'});
  files.push({path:"robots.txt",content:"User-agent: *\nAllow: /\nSitemap: "+base+"sitemap.xml\n"});
  files.push({path:"data/portfolio.json",content:JSON.stringify(config,null,2)+"\n"});
- generated=files;configSha=window.OrbitGitHub.getImportedSha?.()||"";
+ generated=files;configSha=window.OrbitGitHub.getImportedSha?.()||"";generatedConfig=JSON.stringify(config);generatedBranch=document.getElementById("branch").value.trim();
  const host=$("generator-files");host.innerHTML=files.map(f=>'<div class="blog-row"><div class="blog-row-main"><b>'+esc(f.path)+'</b><small>'+new Blob([f.content]).size.toLocaleString()+' bytes</small></div><span class="tag">GENERATED</span></div>').join("");
  $("generator-summary").textContent=files.length+" files ready · "+posts.length+" published articles · one atomic commit";
  $("generator-status").textContent="Preview generated. Nothing has been published yet.";
@@ -34,9 +37,12 @@ $("generator-preview").addEventListener("click",()=>{try{build();}catch(e){$("ge
 $("generator-publish").addEventListener("click",async()=>{
  if(!generated.length)return;
  const branch=document.getElementById("branch").value.trim();
+ if(branch!==generatedBranch){$("generator-status").textContent="The selected branch changed after preview. Build a fresh preview.";return;}
+ if(JSON.stringify(window.OrbitGitHub.getConfig())!==generatedConfig){$("generator-status").textContent="Your portfolio draft changed after preview. Rebuild the preview before publishing.";return;}
+ if(window.OrbitGitHub.getImportedSha()!==configSha){$("generator-status").textContent="The imported configuration revision changed. Re-import and rebuild the preview.";return;}
  if(!confirm("Publish "+generated.length+" generated files to "+branch+" in one GitHub commit?"))return;
  $("generator-publish").disabled=true;$("generator-status").textContent="Publishing…";
- try{const result=await window.OrbitGitHub.publishFiles(generated,window.OrbitGitHub.getImportedSha(),branch,$("generator-message").value.trim());$("generator-status").textContent="Published "+result.files+" files · "+result.commit.slice(0,7);$("generator-summary").textContent="Commit "+result.commit.slice(0,7)+" created successfully.";}
+ try{const result=await window.OrbitGitHub.publishFiles(generated,configSha,branch,$("generator-message").value.trim());$("generator-status").textContent="Published "+result.files+" files · "+result.commit.slice(0,7);$("generator-summary").textContent="Commit "+result.commit.slice(0,7)+" created successfully.";generated=[];$("generator-publish").disabled=true;}
  catch(e){$("generator-status").textContent="Publish stopped: "+e.message;$("generator-publish").disabled=false;}
 });
 $("generator-history").addEventListener("click",async()=>{const host=$("generator-history-list");host.textContent="Loading…";try{const rows=await window.OrbitGitHub.recentCommits(document.getElementById("branch").value.trim());host.innerHTML=rows.map(c=>'<div class="blog-row"><div class="blog-row-main"><b>'+esc(c.commit.message.split("\n")[0])+'</b><small>'+esc(c.commit.author?.date||"")+' · '+esc(c.sha.slice(0,7))+'</small></div><div class="blog-row-actions"><a target="_blank" rel="noopener" href="'+esc(c.html_url)+'">View commit ↗</a><button data-revert="'+esc(c.sha)+'">Revert changed files</button></div></div>').join("")||"No commits found.";
