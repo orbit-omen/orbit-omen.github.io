@@ -1,0 +1,14 @@
+(() => {
+const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let config=null;
+function slugify(v){return String(v||"").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70);}
+function load(){config=window.OrbitContentManager?.getConfig()||window.OrbitGitHub.getConfig();if(!config)return;config.contentItems=Array.isArray(config.contentItems)?config.contentItems:[];render();}
+function render(){const host=$("created-items");host.innerHTML=config.contentItems.map((item,i)=>'<article class="created-item"><div><b>'+esc(item.title||"Untitled")+'</b><small>'+esc(item.type)+' · '+esc(item.date||"No date")+' · /?content='+esc(item.slug)+'</small></div><button data-delete="'+i+'">Remove</button></article>').join("")||'<div class="activity">No content items yet.</div>';host.querySelectorAll("[data-delete]").forEach(b=>b.addEventListener("click",()=>{config.contentItems.splice(Number(b.dataset.delete),1);sync();render();}));}
+function sync(){OrbitGitHub.setConfig(config);window.OrbitContentManager?.refresh();}
+$("create-title").addEventListener("input",()=>{if(!$("create-slug").dataset.edited)$("create-slug").value=slugify($("create-title").value);});
+$("create-slug").addEventListener("input",()=>{$("create-slug").dataset.edited="true";$("create-slug").value=slugify($("create-slug").value);});
+$("create-save").addEventListener("click",()=>{if(!config){$("create-feedback").textContent="Import your portfolio configuration first.";return;}const title=$("create-title").value.trim();if(!title){$("create-feedback").textContent="Add a title first.";return;}const slug=slugify($("create-slug").value||title);if(!slug){$("create-feedback").textContent="Add a valid URL slug.";return;}if(config.contentItems.some(x=>x.slug===slug)){$("create-feedback").textContent="That slug already exists. Choose another.";return;}const item={id:"content-"+Date.now().toString(36),type:$("create-type").value,title,slug,date:$("create-date").value||new Date().toISOString().slice(0,10),excerpt:$("create-excerpt").value.trim(),body:$("create-body").value,cover:$("create-cover").value.trim(),tags:$("create-tags").value.split(",").map(x=>x.trim()).filter(Boolean)};config.contentItems.unshift(item);sync();render();$("create-feedback").textContent="Added to your portfolio draft. Publish the portfolio configuration to make it public.";["create-title","create-slug","create-excerpt","create-body","create-cover","create-tags"].forEach(id=>$(id).value="");$("create-slug").dataset.edited="";});
+document.querySelector('[data-content-tab="create"]').addEventListener("click",load);
+window.addEventListener("orbit:config-imported",load);
+window.OrbitCreator={load};
+})();
