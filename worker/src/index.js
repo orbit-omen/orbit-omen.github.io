@@ -186,7 +186,10 @@ function githubHeaders(env) {
 }
 function githubBase(env) { return "https://api.github.com/repos/" + env.REQUESTS_REPO; }
 async function githubPut(env, path, record, message, sha) {
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(record, null, 2) + "\n")));
+  const bytes = new TextEncoder().encode(JSON.stringify(record, null, 2) + "\n");
+  let binary = "";
+  bytes.forEach(byte => binary += String.fromCharCode(byte));
+  const encoded = btoa(binary);
   const body = { message, content: encoded, branch: env.REQUESTS_BRANCH || "main" };
   if (sha) body.sha = sha;
   const response = await fetch(githubBase(env) + "/contents/" + path.split("/").map(encodeURIComponent).join("/"), { method: "PUT", headers: githubHeaders(env), body: JSON.stringify(body) });
