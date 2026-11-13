@@ -1,0 +1,20 @@
+name = "orbit-client-desk"
+main = "src/index.js"
+compatibility_date = "2026-11-13"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://orbit-omen.github.io"
+REQUESTS_REPO = "orbit-omen/orbit-client-requests"
+REQUESTS_BRANCH = "main"
+
+# Configure secrets with wrangler secret put; never put secret values here:
+# GITHUB_TOKEN
+# DISCORD_BOT_TOKEN
+# DISCORD_CHANNEL_ID
+# DISCORD_MENTION_USER_ID (optional)
+# DISCORD_GUILD_ID (optional; for inbox deep links)
+# ADMIN_PASSWORD
+# SESSION_SECRET
+
+# TURNSTILE_SECRET_KEY (set with: wrangler secret put TURNSTILE_SECRET_KEY)
