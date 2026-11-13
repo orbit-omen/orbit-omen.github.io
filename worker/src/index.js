@@ -139,7 +139,7 @@ async function notifyDiscord(env, record) {
   const lines = [
     "**New OrbitOmen project request**", "**Name:** " + record.name,
     "**Project:** " + (record.project || "Not provided"), "**Category:** " + (record.category || "Not provided"),
-    "**Contact:** " + (record.contactMethod || "Not specified"), "**Description:** " + record.description.slice(0, 900),
+    "**Contact:** " + (record.contactMethod || "Not specified"), "**Contact detail:** " + (record.contactValues[record.contactMethod] || "Not provided"), "**Description:** " + record.description.slice(0, 900),
     "**Request ID:** \`" + record.id + "\`"
   ];
   const response = await fetch("https://discord.com/api/v10/channels/" + env.DISCORD_CHANNEL_ID + "/messages", {
