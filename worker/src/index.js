@@ -176,7 +176,8 @@ async function createRequest(request, env, cors) {
 }
 function requestPath(record) {
   const d = new Date(record.createdAt);
-  return "requests/" + d.getUTCFullYear() + "/" + String(d.getUTCMonth() + 1).padStart(2, "0") + "/" + record.id + ".json";
+  const stamp = d.toISOString().replace(/:/g, "-").replace(/\\.\\d{3}/, "");
+  return "requests/" + d.getUTCFullYear() + "/" + String(d.getUTCMonth() + 1).padStart(2, "0") + "/" + stamp + "-" + record.id + ".json";
 }
 function githubHeaders(env) {
   return { authorization: "Bearer " + env.GITHUB_TOKEN, accept: "application/vnd.github+json", "content-type": "application/json", "x-github-api-version": "2022-11-28" };
