@@ -10,6 +10,7 @@ function applyClientDesk(data){
  const section=document.querySelector("#contact");if(!section)return;
  const old=section.querySelector("#orbit-client-request");if(old)old.remove();
  const settings=data.clientDesk||{};if(!settings.enabled||!/^https:\/\//i.test(settings.endpoint||""))return;
+ const siteKey=String(settings.turnstileSiteKey||"").trim();if(!siteKey){const note=document.createElement("p");note.className="contact-form-status";note.textContent="Project requests are temporarily unavailable. Please use another contact method.";section.querySelector("div:last-child")?.append(note);return;}
  const form=document.createElement("form");form.id="orbit-client-request";form.className="orbit-contact-form";form.noValidate=false;
  const heading=document.createElement("h3");heading.textContent=settings.title||"Let's build something";form.append(heading);
  if(settings.intro){const intro=document.createElement("p");intro.textContent=settings.intro;form.append(intro);}
@@ -32,6 +33,8 @@ function applyClientDesk(data){
   group.append(select);form.append(group);
   enabledMethods.forEach(m=>{const wrap=document.createElement("label");wrap.textContent=m.name+" — "+m.label;const input=document.createElement("input");input.name="contact_"+m.id;input.type=m.id==="email"?"email":"text";input.maxLength=300;input.autocomplete="off";input.dataset.contactMethod=m.id;input.hidden=true;wrap.append(input);form.append(wrap);select.addEventListener("change",()=>{input.hidden=select.value!==m.id;input.required=select.value===m.id;});});
  }
+ const security=document.createElement("div");security.className="cf-turnstile";security.setAttribute("aria-label","Security verification");const securityStatus=document.createElement("small");securityStatus.className="contact-form-status";form.append(security,securityStatus);let turnstileToken="";let turnstileWidget=null;let turnstileReady=false;
+ const turnstileScript=document.createElement("script");turnstileScript.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";turnstileScript.async=true;turnstileScript.defer=true;turnstileScript.onload=()=>{if(!window.turnstile)return;turnstileWidget=window.turnstile.render(security,{sitekey:siteKey,callback:token=>{turnstileToken=token;securityStatus.textContent="Security check complete.";},\"expired-callback\":()=>{turnstileToken="";securityStatus.textContent="Security check expired. Please verify again."},\"error-callback\":()=>{turnstileToken="";securityStatus.textContent="Security check could not load. Refresh the page and try again."}});turnstileReady=true;};turnstileScript.onerror=()=>{securityStatus.textContent="Security check could not load. Refresh the page and try again."};document.head.append(turnstileScript);
  const trap=document.createElement("input");trap.type="text";trap.name="website";trap.tabIndex=-1;trap.autocomplete="off";trap.setAttribute("aria-hidden","true");trap.style.position="absolute";trap.style.left="-10000px";form.append(trap);
  const attachmentWrap=document.createElement("label");attachmentWrap.textContent="Attachments (optional) — up to 5 files, 8 MB total";
  const attachmentInput=document.createElement("input");attachmentInput.type="file";attachmentInput.name="files";attachmentInput.multiple=true;attachmentInput.accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,text/csv,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";attachmentWrap.append(attachmentInput);form.append(attachmentWrap);
@@ -45,8 +48,10 @@ function applyClientDesk(data){
   if(chosenFiles.length>5){status.textContent="Please attach no more than 5 files.";return;}
   if(chosenFiles.some(file=>!allowedTypes.has(file.type))){status.textContent="One or more attachment types are not supported.";return;}
   if(chosenFiles.reduce((sum,file)=>sum+file.size,0)>8*1024*1024){status.textContent="Attachments must total 8 MB or less.";return;}
+  if(!turnstileReady||!turnstileToken){status.textContent="Complete the security check before submitting.";return;}
+  payload.turnstileToken=turnstileToken;
   button.disabled=true;status.textContent="Sending your request and attachments…";
-  try{const body=new FormData();body.append("payload",JSON.stringify(payload));chosenFiles.forEach(file=>body.append("files",file,file.name));const response=await fetch(settings.endpoint,{method:"POST",headers:{"Accept":"application/json"},body});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||"Request could not be submitted.");form.reset();form.querySelectorAll("[data-contact-method]").forEach(input=>{input.hidden=true;input.required=false;});status.textContent=settings.success||"Request received. I'll be in touch.";}
+  try{const body=new FormData();body.append("payload",JSON.stringify(payload));chosenFiles.forEach(file=>body.append("files",file,file.name));const response=await fetch(settings.endpoint,{method:"POST",headers:{"Accept":"application/json"},body});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||"Request could not be submitted.");form.reset();turnstileToken="";if(turnstileWidget!==null)window.turnstile.reset(turnstileWidget);form.querySelectorAll("[data-contact-method]").forEach(input=>{input.hidden=true;input.required=false;});status.textContent=settings.success||"Request received. I'll be in touch.";}
   catch(error){status.textContent=error.message||"Could not send the request. Please try again later or use another contact method.";}
   finally{button.disabled=false;}
  });
