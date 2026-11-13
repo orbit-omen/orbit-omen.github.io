@@ -24,7 +24,7 @@ Create the private repository before deployment. It can be empty; the Worker cre
    - `wrangler secret put DISCORD_BOT_TOKEN`
    - `wrangler secret put DISCORD_CHANNEL_ID`
    - `wrangler secret put DISCORD_MENTION_USER_ID` (optional)
-   - `wrangler secret put ADMIN_TOKEN` (long random value for future Studio inbox access)
+   - `wrangler secret put ADMIN_PASSWORD` (strong, unique password for Studio inbox login)\n   - `wrangler secret put SESSION_SECRET` (at least 32 random bytes, used to sign expiring admin sessions)
 5. Deploy: `wrangler deploy`.
 6. Copy the deployed `workers.dev` URL into Studio → Client Desk → Worker endpoint.
 
@@ -41,7 +41,7 @@ Admin routes require `Authorization: Bearer <ADMIN_TOKEN>`:
 - `GET /api/requests?limit=30` — returns up to 50 newest records.
 - `PATCH /api/requests/<uuid>` — updates status (`new`, `reviewing`, `waiting`, `accepted`, `completed`, `archived`) and/or `adminNotes`.
 
-The admin API is prepared for Studio inbox integration. Do not expose `ADMIN_TOKEN` in browser code, `localStorage` or public config. A secure Studio admin session/proxy is still required before calling admin routes from a browser.
+The Studio Request inbox calls the login endpoint and keeps the short-lived signed token in memory only. It is not written to localStorage, portfolio JSON, or GitHub. Sign out or close/reload the tab to discard it.
 
 ## Security notes
 - The in-memory rate limiter is isolate-local, not a global quota. Add Cloudflare Turnstile and/or a Cloudflare rate-limiting rule before broad public launch.
