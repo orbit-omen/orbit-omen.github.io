@@ -8,7 +8,7 @@ A small Cloudflare Worker backend for the public Client Desk form. It deliberate
 - The public portfolio repository remains public and never receives client request data.
 - GitHub is the durable record store; the Worker has no local database.
 
-Create the private repository before deployment. It can be empty; the Worker creates `requests/YYYY/MM/<uuid>.json` paths on first submission. Do not make this repository public.
+Create the private repository before deployment. It can be empty; the Worker creates `requests/YYYY/MM/<timestamp>-<uuid>.json` paths on first submission. Do not make this repository public.
 
 ## Requirements
 - Cloudflare account with Workers access; Node.js and Wrangler CLI.
