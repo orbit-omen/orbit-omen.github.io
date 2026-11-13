@@ -54,3 +54,10 @@
 .inbox-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .inbox-actions button{border:1px solid var(--line);background:#ffffff09;color:var(--text);border-radius:8px;padding:8px 11px;cursor:pointer}
 @media(max-width:700px){.inbox-card-head{flex-direction:column}}
+
+/* Client Desk attachment upload and inbox file references */
+#orbit-client-request input[type="file"]{display:block;width:100%;margin-top:9px;padding:10px;border:1px dashed var(--line);border-radius:10px;background:#ffffff06;color:var(--muted)}
+.inbox-attachments{display:grid;gap:7px;padding:10px;border-radius:9px;background:#ffffff06}
+.inbox-attachments>b{font-size:9px;letter-spacing:.1em;color:var(--muted)}
+.inbox-attachment{font-size:11px;overflow-wrap:anywhere}
+.inbox-attachments a{font-size:11px;color:var(--accent,#c7a5ff);text-decoration:none}
