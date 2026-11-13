@@ -22,14 +22,15 @@ export default {
     if (allowed && origin && origin !== allowed) return json({ error: "Origin not allowed." }, 403, cors);
     try {
       if (url.pathname === "/api/health" && request.method === "GET") return json({ ok: true, service: "Orbit Client Desk" }, 200, cors);
+      if (url.pathname === "/api/admin/login" && request.method === "POST") return await adminLogin(request, env, cors);
       if (url.pathname === "/api/requests" && request.method === "POST") return await createRequest(request, env, cors);
       if (url.pathname === "/api/requests" && request.method === "GET") {
-        requireAdmin(request, env);
+        await requireAdmin(request, env);
         return await listRequests(url, env, cors);
       }
       const match = url.pathname.match(/^\/api\/requests\/([a-f0-9-]{36})$/i);
       if (match && request.method === "PATCH") {
-        requireAdmin(request, env);
+        await requireAdmin(request, env);
         return await updateRequest(request, match[1], env, cors);
       }
       return json({ error: "Not found." }, 404, cors);
@@ -47,11 +48,46 @@ function requireEnv(env, keys) {
   const missing = keys.filter(key => !env[key]);
   if (missing.length) fail("Worker setup is incomplete: " + missing.join(", "), 503);
 }
-function requireAdmin(request, env) {
-  requireEnv(env, ["ADMIN_TOKEN"]);
+async function adminLogin(request, env, cors) {
+  requireEnv(env, ["ADMIN_PASSWORD", "SESSION_SECRET"]);
+  rateCheck(request);
+  const input = await request.json().catch(() => ({}));
+  const password = typeof input.password === "string" ? input.password : "";
+  if (!safeEqual(password, env.ADMIN_PASSWORD)) fail("Incorrect admin password.", 401);
+  const now = Math.floor(Date.now() / 1000);
+  const payload = base64url(JSON.stringify({ sub: "orbit-studio-admin", iat: now, exp: now + 8 * 60 * 60 }));
+  const signature = await signSession(payload, env.SESSION_SECRET);
+  return json({ ok: true, token: payload + "." + signature, expiresAt: new Date((now + 8 * 60 * 60) * 1000).toISOString() }, 200, cors);
+}
+function base64url(value) {
+  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
+  let binary = "";
+  bytes.forEach(byte => binary += String.fromCharCode(byte));
+  return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+}
+function decodeBase64url(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(normalized + "=".repeat((4 - normalized.length % 4) % 4));
+  return Uint8Array.from(binary, char => char.charCodeAt(0));
+}
+async function signSession(payload, secret) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return base64url(new Uint8Array(signature));
+}
+async function requireAdmin(request, env) {
+  requireEnv(env, ["SESSION_SECRET"]);
   const auth = request.headers.get("Authorization") || "";
-  const supplied = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (!safeEqual(supplied, env.ADMIN_TOKEN)) fail("Unauthorized.", 401);
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const parts = token.split(".");
+  if (parts.length !== 2) fail("Admin session expired. Sign in again.", 401);
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.SESSION_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+  let valid = false;
+  try { valid = await crypto.subtle.verify("HMAC", key, decodeBase64url(parts[1]), new TextEncoder().encode(parts[0])); } catch {}
+  if (!valid) fail("Invalid admin session.", 401);
+  let payload;
+  try { payload = JSON.parse(new TextDecoder().decode(decodeBase64url(parts[0]))); } catch { fail("Invalid admin session.", 401); }
+  if (payload.sub !== "orbit-studio-admin" || !Number.isFinite(payload.exp) || payload.exp <= Math.floor(Date.now() / 1000)) fail("Admin session expired. Sign in again.", 401);
 }
 function safeEqual(a, b) {
   if (!a || !b || a.length !== b.length) return false;
