@@ -123,3 +123,13 @@ The Worker implementation lives in worker/. It stores each inquiry as an individ
 - See worker/README.md for setup, API routes, security notes and the admin API.
 - The Worker API currently supports public submissions and authenticated admin list/status/note endpoints. The Studio inbox UI and a secure admin login/proxy still need to be connected.
 - Attachments are not supported in this initial pass; the current public Client Desk form submits text fields and contact details only.
+
+
+## Client Desk backend and private request inbox
+
+- The Cloudflare Worker backend is in `worker/` and uses **no D1 or R2**.
+- Each inquiry is stored as an individual JSON file in a separate private GitHub repository; the public portfolio repository is never used for visitor records.
+- The Worker posts a notification embed to a private Discord channel and can mention a configured Discord user. Discord and GitHub credentials remain Worker secrets.
+- Studio → Content & settings → Request inbox provides password login, an eight-hour signed admin session held only in browser memory, request filtering, status updates and private admin notes.
+- Set `ADMIN_PASSWORD` and `SESSION_SECRET` as Worker secrets. The GitHub token must be scoped to the private request repository only.
+- Attachments are not implemented in this pass. The Worker and Studio have not been deployed or end-to-end tested; create the private request repository and configure Worker secrets before using the form.
