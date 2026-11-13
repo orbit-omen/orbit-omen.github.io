@@ -16,3 +16,5 @@ REQUESTS_BRANCH = "main"
 # DISCORD_GUILD_ID (optional; for inbox deep links)
 # ADMIN_PASSWORD
 # SESSION_SECRET
+
+# TURNSTILE_SECRET_KEY (set with: wrangler secret put TURNSTILE_SECRET_KEY)
