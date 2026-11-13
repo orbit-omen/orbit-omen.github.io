@@ -15,7 +15,7 @@ function archive(posts,base){
  const cards=posts.map(p=>'<article class="project"><span class="tag">'+esc(p.category||p.type||"ARTICLE")+' · '+esc(p.date||"")+'</span><h2>'+esc(p.title||"Untitled")+'</h2><p>'+esc(p.excerpt||"")+'</p><a href="'+esc(slug(p.slug))+'/">Read article ↗</a></article>').join("");
  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Journal — OrbitOmen</title><meta name="description" content="Projects, releases, ideas and updates from OrbitOmen."><link rel="canonical" href="'+base+'blog/"><link rel="stylesheet" href="../assets/site.css"></head><body><nav><a class="brand" href="../">ORBIT<span>OMEN</span></a><div class="navlinks"><a href="../">Home</a><a href="./">Journal</a></div><a class="studio-link" href="../studio/">Studio ↗</a></nav><main class="section" style="display:block;max-width:1100px;margin:auto;padding:110px 7vw;min-height:70vh"><p class="tag">ORBITOMEN JOURNAL</p><h1>Notes from OrbitOmen</h1><p>Projects, releases, ideas and updates.</p><div class="projects">'+cards+'</div></main><footer><a class="brand" href="../">ORBIT<span>OMEN</span></a><span>© OrbitOmen</span></footer></body></html>';
 }
-function build(){
+async function build(){
  const config=window.OrbitGitHub.getConfig();if(!config)throw new Error("Import your portfolio configuration first.");
  const base=safeBase($("generator-base-url").value.trim()||"https://orbit-omen.github.io/");
  const posts=(config.contentItems||[]).filter(p=>p&&(!p.status||p.status==="published")&&slug(p.slug)).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
@@ -27,13 +27,32 @@ function build(){
  files.push({path:"sitemap.xml",content:'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(u=>'<url><loc>'+esc(u)+'</loc></url>').join("\n")+'\n</urlset>\n'});
  files.push({path:"robots.txt",content:"User-agent: *\nAllow: /\nSitemap: "+base+"sitemap.xml\n"});
  files.push({path:"data/portfolio.json",content:JSON.stringify(config,null,2)+"\n"});
+ const social=config.socialPreview||{};
+ const pageResponse=await fetch("../index.html",{cache:"no-store"});
+ if(!pageResponse.ok)throw new Error("Could not load the current homepage HTML for social metadata generation.");
+ const pageParser=new DOMParser(),pageDoc=pageParser.parseFromString(await pageResponse.text(),"text/html");
+ const putMeta=(key,value,property=false)=>{if(!value)return;const attr=property?"property":"name";let node=pageDoc.head.querySelector('meta['+attr+'="'+key+'"]');if(!node){node=pageDoc.createElement("meta");node.setAttribute(attr,key);pageDoc.head.append(node);}node.content=value;};
+ const shareTitle=String(social.title||config.seo?.title||config.brand||config.name||"OrbitOmen").slice(0,120);
+ const shareDescription=String(social.description||config.seo?.description||config.tagline||"").slice(0,300);
+ const shareImage=social.image||config.seo?.image||"";
+ pageDoc.title=shareTitle;
+ putMeta("description",shareDescription);
+ putMeta("og:site_name",config.brand||config.name||"OrbitOmen",true);
+ putMeta("og:title",shareTitle,true);putMeta("og:description",shareDescription,true);putMeta("og:type","website",true);
+ putMeta("twitter:card",shareImage?"summary_large_image":"summary");putMeta("twitter:title",shareTitle);putMeta("twitter:description",shareDescription);
+ if(social.handle||config.seo?.twitter)putMeta("twitter:site",social.handle||config.seo.twitter);
+ if(shareImage){const imageUrl=new URL(shareImage,base);if(imageUrl.protocol!=="https:")throw new Error("Social preview image must resolve to HTTPS.");putMeta("og:image",imageUrl.href,true);putMeta("twitter:image",imageUrl.href);}
+ if(config.seo?.noindex)putMeta("robots","noindex, nofollow");
+ const canonical=pageDoc.head.querySelector('link[rel="canonical"]')||pageDoc.head.appendChild(pageDoc.createElement("link"));canonical.rel="canonical";canonical.href=base;
+ files.push({path:"index.html",content:"<!doctype html>\\n"+pageDoc.documentElement.outerHTML});
+
  generated=files;configSha=window.OrbitGitHub.getImportedSha?.()||"";generatedConfig=JSON.stringify(config);generatedBranch=document.getElementById("branch").value.trim();
  const host=$("generator-files");host.innerHTML=files.map(f=>'<div class="blog-row"><div class="blog-row-main"><b>'+esc(f.path)+'</b><small>'+new Blob([f.content]).size.toLocaleString()+' bytes</small></div><span class="tag">GENERATED</span></div>').join("");
  $("generator-summary").textContent=files.length+" files ready · "+posts.length+" published articles · one atomic commit";
  $("generator-status").textContent="Preview generated. Nothing has been published yet.";
  $("generator-publish").disabled=false;
 }
-$("generator-preview").addEventListener("click",()=>{try{build();}catch(e){$("generator-status").textContent=e.message;$("generator-publish").disabled=true;}});
+$("generator-preview").addEventListener("click",async()=>{try{$("generator-status").textContent="Generating static pages and social metadata…";await build();}catch(e){$("generator-status").textContent=e.message;$("generator-publish").disabled=true;}});
 $("generator-publish").addEventListener("click",async()=>{
  if(!generated.length)return;
  const branch=document.getElementById("branch").value.trim();
