@@ -102,7 +102,7 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 
 ## Phase 13 — Public Client Desk and multi-site Pages deployment
 
-- The public contact section can render the configurable Client Desk form from clientDesk settings, including custom fields and selectable contact methods. It submits JSON to the configured HTTPS Worker endpoint; the backend must enforce validation, spam controls, CORS and rate limits before accepting requests.
+- The public contact section can render the configurable Client Desk form from clientDesk settings, including custom fields and selectable contact methods. It submits text fields as JSON or attachments as multipart form data to the configured HTTPS Worker endpoint; the Worker validates uploads, applies basic spam controls and enforces CORS.
 - Client Desk submission includes field values, selected contact method, and contact details supplied by the visitor. The public form does not expose Discord credentials.
 - The Publishing Studio now generates the root index.html with Open Graph and Twitter metadata in the initial HTML response. This is important for Discord and other crawlers that do not execute JavaScript before reading page metadata.
 - Generated homepage metadata is included in the publication preview and can be rolled back through the restricted Studio rollback workflow.
