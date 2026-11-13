@@ -93,15 +93,16 @@ async function createRequest(request, env, cors) {
   const description = clean(safeFields.description || input.description, 4000);
   if (!name || !description) fail("Please provide your name and project description.");
   const contactValues = {};
-  if (input.contactValues && typeof input.contactValues === "object" && !Array.isArray(input.contactValues)) {
-    for (const [key, value] of Object.entries(input.contactValues).slice(0, 20)) {
+  const submittedContacts = input.contactValues || input.contactMethods;
+  if (submittedContacts && typeof submittedContacts === "object" && !Array.isArray(submittedContacts)) {
+    for (const [key, value] of Object.entries(submittedContacts).slice(0, 20)) {
       const safeKey = clean(key, 50).replace(/[^a-zA-Z0-9_-]/g, "");
       if (safeKey) contactValues[safeKey] = clean(value, 300);
     }
   }
   const record = {
     id: crypto.randomUUID(), status: "new", createdAt: new Date().toISOString(),
-    page: clean(input.page, 500), formId: clean(input.formId, 80),
+    page: clean(input.page || input.site, 500), formId: clean(input.formId, 80),
     name, project: clean(safeFields.project, 200), category: clean(safeFields.category, 100),
     description, budget: clean(safeFields.budget, 100), deadline: clean(safeFields.deadline, 100),
     references: clean(safeFields.references, 1000), fields: safeFields,
