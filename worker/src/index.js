@@ -176,7 +176,7 @@ async function createRequest(request, env, cors) {
 }
 function requestPath(record) {
   const d = new Date(record.createdAt);
-  const stamp = d.toISOString().replace(/:/g, "-").replace(/\\.\\d{3}/, "");
+  const stamp = d.toISOString().slice(0, 19).replaceAll(":", "-") + "Z";
   return "requests/" + d.getUTCFullYear() + "/" + String(d.getUTCMonth() + 1).padStart(2, "0") + "/" + stamp + "-" + record.id + ".json";
 }
 function githubHeaders(env) {
@@ -220,7 +220,7 @@ async function listRequests(url, env, cors) {
   requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO"]);
   const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") || 30)));
   const tree = await githubTree(env);
-  const paths = (tree.tree || []).filter(x => x.type === "blob" && /^requests\/\d{4}\/\d{2}\/[a-f0-9-]{36}\.json$/i.test(x.path)).map(x => x.path).sort().reverse().slice(0, limit);
+  const paths = (tree.tree || []).filter(x => x.type === "blob" && x.path.startsWith("requests/") && x.path.endsWith(".json") && x.path.split("/").length === 4).map(x => x.path).sort().reverse().slice(0, limit);
   const records = await Promise.all(paths.map(async path => {
     const response = await fetch(githubBase(env) + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + "?ref=" + encodeURIComponent(env.REQUESTS_BRANCH || "main"), { headers: githubHeaders(env) });
     if (!response.ok) return null;
@@ -233,7 +233,7 @@ async function updateRequest(request, id, env, cors) {
   requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO"]);
   const input = await request.json(), status = clean(input.status, 30);
   if (status && !["new", "reviewing", "waiting", "accepted", "completed", "archived"].includes(status)) fail("Invalid request status.");
-  const tree = await githubTree(env), item = (tree.tree || []).find(x => x.type === "blob" && x.path.endsWith("/" + id + ".json"));
+  const tree = await githubTree(env), item = (tree.tree || []).find(x => x.type === "blob" && x.path.endsWith(id + ".json"));
   if (!item) fail("Request record was not found.", 404);
   const current = await githubGet(env, item.path);
   if (status) current.record.status = status;
