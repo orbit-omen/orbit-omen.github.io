@@ -1,5 +1,8 @@
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
-const MAX_BODY = 24 * 1024;
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_BODY = MAX_UPLOAD_BYTES + 128 * 1024;
+const MAX_FILES = 5;
+const ALLOWED_UPLOAD_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf", "text/plain", "text/csv", "application/zip", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]);
 const MAX_TEXT = 5000;
 const memoryRate = new Map();
 const loginRate = new Map();
@@ -138,12 +141,32 @@ async function createRequest(request, env, cors) {
   requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO", "DISCORD_BOT_TOKEN", "DISCORD_CHANNEL_ID"]);
   rateCheck(request);
   const length = Number(request.headers.get("content-length") || 0);
-  if (length > MAX_BODY) fail("Request is too large.", 413);
-  const raw = await request.text();
-  if (raw.length > MAX_BODY) fail("Request is too large.", 413);
-  let input;
-  try { input = JSON.parse(raw); } catch { fail("Invalid JSON body."); }
+  if (length > MAX_BODY) fail("Request and attachments exceed the 8 MB upload limit.", 413);
+  let input, uploads = [];
+  if ((request.headers.get("content-type") || "").toLowerCase().includes("multipart/form-data")) {
+    const form = await request.formData(), raw = form.get("payload");
+    if (typeof raw !== "string" || raw.length > 24 * 1024) fail("Invalid request payload.");
+    try { input = JSON.parse(raw); } catch { fail("Invalid request payload."); }
+    uploads = form.getAll("files").filter(value => value && typeof value.arrayBuffer === "function" && typeof value.name === "string");
+  } else {
+    const raw = await request.text();
+    if (raw.length > 24 * 1024) fail("Request is too large.", 413);
+    try { input = JSON.parse(raw); } catch { fail("Invalid JSON body."); }
+  }
   if (clean(input.website, 200)) return json({ ok: true, message: "Request received." }, 200, cors);
+  if (uploads.length > MAX_FILES) fail("Attach up to 5 files.", 413);
+  let totalBytes = 0;
+  const files = [];
+  for (const file of uploads) {
+    if (!file.size) continue;
+    if (file.size > MAX_UPLOAD_BYTES) fail("Each attachment must be 8 MB or smaller.", 413);
+    totalBytes += file.size;
+    if (totalBytes > MAX_UPLOAD_BYTES) fail("All attachments together must be 8 MB or smaller.", 413);
+    const type = (file.type || "application/octet-stream").toLowerCase();
+    if (!ALLOWED_UPLOAD_TYPES.has(type)) fail("Unsupported attachment type: " + clean(file.name, 100));
+    const filename = clean(file.name, 120).replace(/[^\w.\- ()]/g, "_").replace(/^\.+/, "") || "attachment";
+    files.push({ blob: file, filename, type, size: file.size });
+  }
   const fields = input.fields && typeof input.fields === "object" && !Array.isArray(input.fields) ? input.fields : {};
   const safeFields = {};
   for (const [key, value] of Object.entries(fields).slice(0, 40)) {
@@ -168,13 +191,21 @@ async function createRequest(request, env, cors) {
     description, budget: clean(safeFields.budget, 100), deadline: clean(safeFields.deadline, 100),
     references: clean(safeFields.references, 1000), fields: safeFields,
     contactMethod: clean(input.contactMethod || input.preferredContact, 40),
-    contactValues, preferredContact: clean(input.preferredContact, 40), adminNotes: ""
+    contactValues, preferredContact: clean(input.preferredContact, 40), adminNotes: "",
+    attachments: [], discordMessageUrl: ""
   };
+  if (files.length) {
+    const sent = await notifyDiscord(env, record, files);
+    record.attachments = sent.attachments;
+    record.discordMessageUrl = env.DISCORD_GUILD_ID ? "https://discord.com/channels/" + env.DISCORD_GUILD_ID + "/" + env.DISCORD_CHANNEL_ID + "/" + sent.messageId : "";
+    await githubPut(env, requestPath(record), record, "New Client Desk request " + record.id + " with attachments");
+    return json({ ok: true, id: record.id, discordNotified: true, attachmentCount: files.length, message: "Request received." }, 201, cors);
+  }
   await githubPut(env, requestPath(record), record, "New Client Desk request " + record.id);
   let discordNotified = false;
   try { await notifyDiscord(env, record); discordNotified = true; }
   catch (error) { console.error("Discord notification failed:", error.message); }
-  return json({ ok: true, id: record.id, discordNotified, message: "Request received." }, 201, cors);
+  return json({ ok: true, id: record.id, discordNotified, attachmentCount: 0, message: "Request received." }, 201, cors);
 }
 function requestPath(record) {
   const d = new Date(record.createdAt);
@@ -199,7 +230,7 @@ async function githubPut(env, path, record, message, sha) {
   }
   return response.json();
 }
-async function notifyDiscord(env, record) {
+async function notifyDiscord(env, record, files = []) {
   const mention = env.DISCORD_MENTION_USER_ID ? "<@" + env.DISCORD_MENTION_USER_ID + ">" : "";
   const lines = [
     "**New OrbitOmen project request**", "**Name:** " + record.name,
@@ -207,12 +238,26 @@ async function notifyDiscord(env, record) {
     "**Contact:** " + (record.contactMethod || "Not specified"), "**Contact detail:** " + (record.contactValues[record.contactMethod] || "Not provided"), "**Description:** " + record.description.slice(0, 900),
     "**Request ID:** \`" + record.id + "\`"
   ];
-  const response = await fetch("https://discord.com/api/v10/channels/" + env.DISCORD_CHANNEL_ID + "/messages", {
-    method: "POST",
-    headers: { authorization: "Bot " + env.DISCORD_BOT_TOKEN, "content-type": "application/json" },
-    body: JSON.stringify({ content: mention, embeds: [{ title: "New project inquiry", description: lines.join("\n"), color: 11940082, timestamp: record.createdAt }], allowed_mentions: { users: env.DISCORD_MENTION_USER_ID ? [env.DISCORD_MENTION_USER_ID] : [] } })
-  });
+  const message = { content: mention, embeds: [{ title: "New project inquiry", description: lines.join("\n"), color: 11940082, timestamp: record.createdAt }], allowed_mentions: { users: env.DISCORD_MENTION_USER_ID ? [env.DISCORD_MENTION_USER_ID] : [] } };
+  let body, headers = { authorization: "Bot " + env.DISCORD_BOT_TOKEN };
+  if (files.length) {
+    body = new FormData();
+    body.append("payload_json", JSON.stringify(message));
+    files.forEach((file, index) => body.append("files[" + index + "]", file.blob, file.filename));
+  } else {
+    headers["content-type"] = "application/json";
+    body = JSON.stringify(message);
+  }
+  const response = await fetch("https://discord.com/api/v10/channels/" + env.DISCORD_CHANNEL_ID + "/messages", { method: "POST", headers, body });
   if (!response.ok) throw new Error("Discord API returned " + response.status + ": " + (await response.text()).slice(0, 300));
+  const sent = await response.json();
+  return {
+    messageId: sent.id || "",
+    attachments: (sent.attachments || []).map(item => ({
+      id: item.id, filename: clean(item.filename, 120), size: Number(item.size) || 0,
+      contentType: clean(item.content_type, 100), url: clean(item.url, 1000)
+    }))
+  };
 }
 async function githubGet(env, path) {
   const response = await fetch(githubBase(env) + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + "?ref=" + encodeURIComponent(env.REQUESTS_BRANCH || "main"), { headers: githubHeaders(env) });
