@@ -2,6 +2,7 @@ const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const MAX_BODY = 24 * 1024;
 const MAX_TEXT = 5000;
 const memoryRate = new Map();
+const loginRate = new Map();
 
 export default {
   async fetch(request, env) {
@@ -50,7 +51,7 @@ function requireEnv(env, keys) {
 }
 async function adminLogin(request, env, cors) {
   requireEnv(env, ["ADMIN_PASSWORD", "SESSION_SECRET"]);
-  rateCheck(request);
+  loginRateCheck(request);
   const input = await request.json().catch(() => ({}));
   const password = typeof input.password === "string" ? input.password : "";
   if (!safeEqual(password, env.ADMIN_PASSWORD)) fail("Incorrect admin password.", 401);
@@ -99,6 +100,28 @@ function clean(value, max = MAX_TEXT) {
   if (value == null) return "";
   if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") return "";
   return String(value).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
+}
+function loginRateCheck(request) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const now = Date.now();
+  const recent = (loginRate.get(ip) || []).filter(t => now - t < 600000);
+  if (recent.length >= 5) fail("Too many sign-in attempts. Try again later.", 429);
+  recent.push(now);
+  loginRate.set(ip, recent);
+  if (loginRate.size > 2000) for (const [key, values] of loginRate) if (!values.length || now - values[values.length - 1] > 600000) loginRate.delete(key);
+}
+async function githubTree(env) {
+  const branch = env.REQUESTS_BRANCH || "main";
+  const branchResponse = await fetch(githubBase(env) + "/branches/" + encodeURIComponent(branch), { headers: githubHeaders(env) });
+  if (!branchResponse.ok) fail("Could not read the private request repository branch.", 502);
+  const branchData = await branchResponse.json();
+  const treeSha = branchData.commit?.commit?.tree?.sha;
+  if (!treeSha) fail("Could not resolve the private request repository tree.", 502);
+  const response = await fetch(githubBase(env) + "/git/trees/" + treeSha + "?recursive=1", { headers: githubHeaders(env) });
+  if (!response.ok) fail("Could not read private request records.", 502);
+  const tree = await response.json();
+  if (tree.truncated) fail("The request archive is too large for one listing.", 503);
+  return tree;
 }
 function rateCheck(request) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -195,10 +218,7 @@ async function githubGet(env, path) {
 async function listRequests(url, env, cors) {
   requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO"]);
   const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") || 30)));
-  const response = await fetch(githubBase(env) + "/git/trees/" + encodeURIComponent(env.REQUESTS_BRANCH || "main") + "?recursive=1", { headers: githubHeaders(env) });
-  if (!response.ok) fail("Could not read private request records.", 502);
-  const tree = await response.json();
-  if (tree.truncated) fail("The request archive is too large for one listing.", 503);
+  const tree = await githubTree(env);
   const paths = (tree.tree || []).filter(x => x.type === "blob" && /^requests\/\d{4}\/\d{2}\/[a-f0-9-]{36}\.json$/i.test(x.path)).map(x => x.path).sort().reverse().slice(0, limit);
   const records = await Promise.all(paths.map(async path => {
     const response = await fetch(githubBase(env) + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + "?ref=" + encodeURIComponent(env.REQUESTS_BRANCH || "main"), { headers: githubHeaders(env) });
@@ -206,15 +226,13 @@ async function listRequests(url, env, cors) {
     const item = await response.json(), decoded = atob(item.content.replace(/\n/g, ""));
     return JSON.parse(new TextDecoder().decode(Uint8Array.from(decoded, c => c.charCodeAt(0))));
   }));
-  return json({ requests: records.filter(Boolean) }, 200, cors);
+  return json({ requests: records.filter(Boolean).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))) }, 200, cors);
 }
 async function updateRequest(request, id, env, cors) {
   requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO"]);
   const input = await request.json(), status = clean(input.status, 30);
   if (status && !["new", "reviewing", "waiting", "accepted", "completed", "archived"].includes(status)) fail("Invalid request status.");
-  const treeResponse = await fetch(githubBase(env) + "/git/trees/" + encodeURIComponent(env.REQUESTS_BRANCH || "main") + "?recursive=1", { headers: githubHeaders(env) });
-  if (!treeResponse.ok) fail("Could not locate request record.", 502);
-  const tree = await treeResponse.json(), item = (tree.tree || []).find(x => x.type === "blob" && x.path.endsWith("/" + id + ".json"));
+  const tree = await githubTree(env), item = (tree.tree || []).find(x => x.type === "blob" && x.path.endsWith("/" + id + ".json"));
   if (!item) fail("Request record was not found.", 404);
   const current = await githubGet(env, item.path);
   if (status) current.record.status = status;
