@@ -98,3 +98,16 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - **Social Preview Studio:** configure default Open Graph / Discord title, description, image, handle and preview style. This phase saves metadata settings; the static HTML generator still needs to emit page-specific metadata into the initial HTML response for Discord crawler compatibility.
 - **Client Desk form builder:** configure inquiry form copy, enablement, custom contact methods (Instagram, Discord, email, WhatsApp, Telegram, X, LinkedIn and custom platforms), and custom request fields. The Worker endpoint is an optional HTTPS setting. Public submission delivery, private request storage, attachment handling, Discord notifications and request management are not active until the Cloudflare Worker backend is deployed.
 - No Discord bot token, GitHub PAT or other secret is stored in the public portfolio configuration.
+
+
+## Phase 13 — Public Client Desk and multi-site Pages deployment
+
+- The public contact section can render the configurable Client Desk form from clientDesk settings, including custom fields and selectable contact methods. It submits JSON to the configured HTTPS Worker endpoint; the backend must enforce validation, spam controls, CORS and rate limits before accepting requests.
+- Client Desk submission includes field values, selected contact method, and contact details supplied by the visitor. The public form does not expose Discord credentials.
+- The Publishing Studio now generates the root index.html with Open Graph and Twitter metadata in the initial HTML response. This is important for Discord and other crawlers that do not execute JavaScript before reading page metadata.
+- Generated homepage metadata is included in the publication preview and can be rolled back through the restricted Studio rollback workflow.
+- A dedicated media branch has been initialized from main. Put public assets under assets/media/; the deployment builder mounts that directory at /media/.
+- scripts/build-pages.mjs assembles the main site, each registered site's source branch at its configured /<slug>/ path, and the shared media branch into one Pages artifact.
+- .github/workflows/orbit-pages-deploy.yml is a manual deployment workflow. It runs only from main, builds the combined artifact, and deploys through GitHub Pages Actions. After this PR is merged, configure Settings → Pages → Build and deployment → Source: GitHub Actions, then run the workflow from the Actions tab.
+- Site branches must contain a self-contained static website with relative asset paths for nested deployment. Register site branches and deployment paths in the main portfolio's Studio configuration. The media and main branches are reserved.
+- This deployment workflow is intentionally not run from the feature branch. It will become available after the changes are merged to main; no live deployment has been performed.
