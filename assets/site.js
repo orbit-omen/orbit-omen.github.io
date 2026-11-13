@@ -6,7 +6,58 @@ function safeImageUrl(value){const v=String(value??"").trim();if(/^https?:/i.tes
 function setMeta(name,content,property=false){if(!content)return;const key=property?"property":"name";let el=document.head.querySelector('meta['+key+'="'+name+'"]');if(!el){el=document.createElement("meta");el.setAttribute(key,name);document.head.append(el);}el.content=content;}
 function applySeo(data){const params=new URLSearchParams(location.search);const item=(data.contentItems||[]).find(x=>x.slug===params.get("content"));const seo=item?{title:item.seoTitle||item.title,description:item.seoDescription||item.excerpt,image:item.seoImage||item.cover,noindex:item.status==="draft"}:data.seo||{};if(seo.title)document.title=seo.title;setMeta("description",seo.description);setMeta("robots",seo.noindex?"noindex, nofollow":"index, follow");setMeta("og:title",seo.title||document.title,true);setMeta("og:description",seo.description,true);setMeta("og:type","website",true);setMeta("twitter:card",seo.image?"summary_large_image":"summary");setMeta("twitter:title",seo.title||document.title);setMeta("twitter:description",seo.description);if(seo.twitter)setMeta("twitter:site",seo.twitter);if(seo.image){const image=safeImageUrl(seo.image);if(image){setMeta("og:image",new URL(image,location.href).href,true);setMeta("twitter:image",new URL(image,location.href).href);}}if(seo.canonical&&/^https:\/\//i.test(seo.canonical)){let link=document.querySelector('link[rel="canonical"]');if(!link){link=document.createElement("link");link.rel="canonical";document.head.append(link);}link.href=seo.canonical;}}
 function applyAnalytics(data){const a=data.analytics||{};if(!a.enabled||!a.id||document.getElementById("orbit-analytics"))return;if(a.provider==="google"&&/^G-[A-Z0-9]+$/.test(a.id)){const s=document.createElement("script");s.id="orbit-analytics";s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(a.id);document.head.append(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){window.dataLayer.push(arguments);};window.gtag("js",new Date());window.gtag("config",a.id);}else if(a.provider==="plausible"&&/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(a.id)){const s=document.createElement("script");s.id="orbit-analytics";s.defer=true;s.src="https://plausible.io/js/script.js";s.dataset.domain=a.id;document.head.append(s);}}
-function applyContactForm(data){const section=document.querySelector("#contact");if(!section)return;const old=section.querySelector("#orbit-contact-form");if(old)old.remove();const settings=data.contactForm||{};if(!settings.enabled||!/^https:\/\/formspree\.io\/f\/[A-Za-z0-9]+$/.test(settings.endpoint||""))return;const form=document.createElement("form");form.id="orbit-contact-form";form.className="orbit-contact-form";form.noValidate=false;form.action=settings.endpoint;form.method="POST";const fields=[["name","Your name","text"],["email","Email address","email"],["message","Your message","textarea"]];for(const [name,label,type] of fields){const wrap=document.createElement("label");wrap.textContent=label;let input;if(type==="textarea"){input=document.createElement("textarea");input.rows=4;}else{input=document.createElement("input");input.type=type;}input.name=name;input.required=true;if(name==="email")input.autocomplete="email";if(name==="name")input.autocomplete="name";wrap.append(input);form.append(wrap);}const button=document.createElement("button");button.type="submit";button.className="button primary";button.textContent=settings.button||"Send message";form.append(button);const status=document.createElement("p");status.className="contact-form-status";status.setAttribute("aria-live","polite");form.append(status);form.addEventListener("submit",async event=>{event.preventDefault();if(!form.reportValidity())return;button.disabled=true;status.textContent="Sending…";try{const response=await fetch(settings.endpoint,{method:"POST",body:new FormData(form),headers:{Accept:"application/json"}});if(!response.ok)throw new Error("The form service rejected this submission.");form.reset();status.textContent="Message sent. Thank you."; }catch(error){status.textContent="Could not send your message. Please try again or use the email link."; }finally{button.disabled=false;}});section.querySelector("div:last-child")?.append(form);}
+function applyClientDesk(data){
+ const section=document.querySelector("#contact");if(!section)return;
+ const old=section.querySelector("#orbit-client-request");if(old)old.remove();
+ const settings=data.clientDesk||{};if(!settings.enabled||!/^https:\/\//i.test(settings.endpoint||""))return;
+ const form=document.createElement("form");form.id="orbit-client-request";form.className="orbit-contact-form";form.noValidate=false;
+ const heading=document.createElement("h3");heading.textContent=settings.title||"Let's build something";form.append(heading);
+ if(settings.intro){const intro=document.createElement("p");intro.textContent=settings.intro;form.append(intro);}
+ const fields=(settings.fields||[]).filter(f=>f.enabled!==false);
+ for(const field of fields){
+  const wrap=document.createElement("label");wrap.textContent=field.label||field.id;
+  let input;
+  if(field.type==="textarea"){input=document.createElement("textarea");input.rows=4;}
+  else if(field.type==="select"){input=document.createElement("select");const blank=document.createElement("option");blank.value="";blank.textContent="Choose an option";input.append(blank);(field.options||[]).forEach(option=>{const o=document.createElement("option");o.value=option;o.textContent=option;input.append(o);});}
+  else{input=document.createElement("input");input.type=["email","url","number","date"].includes(field.type)?field.type:"text";}
+  input.name=field.id;input.required=!!field.required;input.maxLength=field.type==="textarea"?5000:500;
+  wrap.append(input);form.append(wrap);
+ }
+ const enabledMethods=(settings.contactMethods||[]).filter(m=>m.enabled!==false);
+ if(enabledMethods.length){
+  const group=document.createElement("fieldset");const legend=document.createElement("legend");legend.textContent="Preferred contact method";group.append(legend);
+  const select=document.createElement("select");select.name="preferredContact";select.required=true;
+  const empty=document.createElement("option");empty.value="";empty.textContent="Choose how to contact you";select.append(empty);
+  enabledMethods.forEach(m=>{const o=document.createElement("option");o.value=m.id;o.textContent=(m.icon?m.icon+" ":"")+m.name;select.append(o);});
+  group.append(select);form.append(group);
+  enabledMethods.forEach(m=>{const wrap=document.createElement("label");wrap.textContent=m.name+" — "+m.label;const input=document.createElement("input");input.name="contact_"+m.id;input.type=m.id==="email"?"email":"text";input.maxLength=300;input.autocomplete="off";input.dataset.contactMethod=m.id;input.hidden=true;wrap.append(input);form.append(wrap);select.addEventListener("change",()=>{input.hidden=select.value!==m.id;input.required=select.value===m.id;});});
+ }
+ const trap=document.createElement("input");trap.type="text";trap.name="website";trap.tabIndex=-1;trap.autocomplete="off";trap.setAttribute("aria-hidden","true");trap.style.position="absolute";trap.style.left="-10000px";form.append(trap);
+ const button=document.createElement("button");button.type="submit";button.className="button primary";button.textContent=settings.button||"Send project request";form.append(button);
+ const status=document.createElement("p");status.className="contact-form-status";status.setAttribute("aria-live","polite");form.append(status);
+ form.addEventListener("submit",async event=>{event.preventDefault();if(!form.reportValidity())return;if(trap.value)return;
+  const payload={formId:"client-desk",site:location.origin+location.pathname,submittedAt:new Date().toISOString(),fields:{},contactMethods:{},preferredContact:form.elements.preferredContact?.value||""};
+  new FormData(form).forEach((value,key)=>{if(key==="website")return;if(key.startsWith("contact_"))payload.contactMethods[key.slice(8)]=String(value).slice(0,300);else if(key!=="preferredContact")payload.fields[key]=String(value).slice(0,5000);});
+  button.disabled=true;status.textContent="Sending your request…";
+  try{const response=await fetch(settings.endpoint,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});if(!response.ok)throw new Error("Request could not be submitted.");form.reset();form.querySelectorAll("[data-contact-method]").forEach(input=>{input.hidden=true;input.required=false;});status.textContent=settings.success||"Request received. I'll be in touch.";}
+  catch(error){status.textContent="Could not send the request. Please try again later or use another contact method.";}
+  finally{button.disabled=false;}
+ });
+ section.querySelector("div:last-child")?.append(form);
+}
+function applyContactForm(data){
+ const section=document.querySelector("#contact");if(!section)return;
+ const settings=data.contactForm||{};if(data.clientDesk?.enabled){applyClientDesk(data);return;}
+ const old=section.querySelector("#orbit-contact-form");if(old)old.remove();
+ if(!settings.enabled||!/^https:\/\/formspree\.io\/f\/[A-Za-z0-9]+$/.test(settings.endpoint||""))return;
+ const form=document.createElement("form");form.id="orbit-contact-form";form.className="orbit-contact-form";form.noValidate=false;form.action=settings.endpoint;form.method="POST";
+ const fields=[["name","Your name","text"],["email","Email address","email"],["message","Your message","textarea"]];
+ for(const [name,label,type] of fields){const wrap=document.createElement("label");wrap.textContent=label;let input;if(type==="textarea"){input=document.createElement("textarea");input.rows=4;}else{input=document.createElement("input");input.type=type;}input.name=name;input.required=true;wrap.append(input);form.append(wrap);}
+ const button=document.createElement("button");button.type="submit";button.className="button primary";button.textContent=settings.button||"Send message";form.append(button);
+ const status=document.createElement("p");status.className="contact-form-status";status.setAttribute("aria-live","polite");form.append(status);
+ form.addEventListener("submit",async event=>{event.preventDefault();if(!form.reportValidity())return;button.disabled=true;status.textContent="Sending…";try{const response=await fetch(settings.endpoint,{method:"POST",body:new FormData(form),headers:{Accept:"application/json"}});if(!response.ok)throw new Error("Rejected");form.reset();status.textContent="Message sent. Thank you.";}catch{status.textContent="Could not send your message. Please try again or use the email link.";}finally{button.disabled=false;}});
+ section.querySelector("div:last-child")?.append(form);
+}
 function applyExtras(data){applySeo(data);applyAnalytics(data);applyContactForm(data);}
 
 
