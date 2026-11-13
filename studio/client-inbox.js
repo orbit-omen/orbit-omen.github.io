@@ -91,6 +91,17 @@
       for (const [key, value] of Object.entries(item.contactValues || {})) {
         if (value) details.append(detail("Contact · " + key, String(value)));
       }
+      if (Array.isArray(item.attachments) && item.attachments.length) {
+        const attachments = element("div", "inbox-attachments");
+        attachments.append(element("b", "", "ATTACHMENTS"));
+        item.attachments.forEach(file => attachments.append(element("div", "inbox-attachment", file.filename + " · " + Math.max(1, Math.round((file.size || 0) / 1024)) + " KB")));
+        if (item.discordMessageUrl && /^https:\/\/discord\.com\/channels\//.test(item.discordMessageUrl)) {
+          const link = element("a", "", "Open files in private Discord channel");
+          link.href = item.discordMessageUrl; link.target = "_blank"; link.rel = "noopener noreferrer";
+          attachments.append(link);
+        }
+        card.append(attachments);
+      }
       if (details.childElementCount) card.append(details);
       const notes = document.createElement("textarea");
       notes.className = "inbox-notes";
