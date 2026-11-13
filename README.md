@@ -111,3 +111,15 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - .github/workflows/orbit-pages-deploy.yml is a manual deployment workflow. It runs only from main, builds the combined artifact, and deploys through GitHub Pages Actions. After this PR is merged, configure Settings → Pages → Build and deployment → Source: GitHub Actions, then run the workflow from the Actions tab.
 - Site branches must contain a self-contained static website with relative asset paths for nested deployment. Register site branches and deployment paths in the main portfolio's Studio configuration. The media and main branches are reserved.
 - This deployment workflow is intentionally not run from the feature branch. It will become available after the changes are merged to main; no live deployment has been performed.
+
+
+## Orbit Client Desk Worker backend (no D1 / no R2)
+
+The Worker implementation lives in worker/. It stores each inquiry as an individual JSON record in a separate private GitHub repository and sends a notification embed to a private Discord channel. The public portfolio repository is not used for visitor records.
+
+- No D1 or R2 is used.
+- Create the private repository orbit-omen/orbit-client-requests (or change REQUESTS_REPO in worker/wrangler.toml).
+- Configure GitHub and Discord credentials as Cloudflare Worker secrets, then deploy from the worker/ directory.
+- See worker/README.md for setup, API routes, security notes and the admin API.
+- The Worker API currently supports public submissions and authenticated admin list/status/note endpoints. The Studio inbox UI and a secure admin login/proxy still need to be connected.
+- Attachments are not supported in this initial pass; the current public Client Desk form submits text fields and contact details only.
