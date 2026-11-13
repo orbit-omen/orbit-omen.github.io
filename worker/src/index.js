@@ -224,7 +224,8 @@ async function verifyTurnstile(token, request, env) {
     if (error.status) throw error;
     fail("Security verification is temporarily unavailable.", 503);
   }
-  if (!result.success) fail("Security check failed or expired. Please try again.", 403);
+  const expectedHost = env.ALLOWED_ORIGIN ? new URL(env.ALLOWED_ORIGIN).hostname : "";
+  if (!result.success || (expectedHost && result.hostname !== expectedHost)) fail("Security check failed or expired. Please try again.", 403);
 }
 function requestPath(record) {
   const d = new Date(record.createdAt);
