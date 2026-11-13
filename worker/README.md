@@ -22,7 +22,7 @@ Create the private repository before deployment. It can be empty; the Worker cre
 4. Add secrets interactively (never commit their values):
    - `wrangler secret put GITHUB_TOKEN`
    - `wrangler secret put DISCORD_BOT_TOKEN`
-   - `wrangler secret put DISCORD_CHANNEL_ID`\n   - `wrangler secret put DISCORD_GUILD_ID` (optional; enables a direct link from the inbox to the Discord message)
+   - `wrangler secret put DISCORD_CHANNEL_ID`\n   - `wrangler secret put DISCORD_GUILD_ID` (required for file uploads and inbox links)
    - `wrangler secret put DISCORD_MENTION_USER_ID` (optional)
    - `wrangler secret put ADMIN_PASSWORD` (strong, unique password for Studio inbox login)
    - `wrangler secret put SESSION_SECRET` (at least 32 random bytes, used to sign expiring admin sessions)
