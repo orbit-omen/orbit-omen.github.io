@@ -96,7 +96,7 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - **Multi-site registry:** register independent website names, source branches and deployment paths. The main portfolio is shown as a protected primary site. This is a configuration manager only; branch aggregation into deployment paths requires the dedicated GitHub Actions deployment workflow.
 - **Shared media source:** configure the dedicated `media` branch and its public `/media/` mount path. The deployment workflow must assemble this branch into the Pages artifact; GitHub Pages does not publish arbitrary branches at matching URL paths automatically.
 - **Social Preview Studio:** configure default Open Graph / Discord title, description, image, handle and preview style. This phase saves metadata settings; the static HTML generator still needs to emit page-specific metadata into the initial HTML response for Discord crawler compatibility.
-- **Client Desk form builder:** configure inquiry form copy, enablement, custom contact methods (Instagram, Discord, email, WhatsApp, Telegram, X, LinkedIn and custom platforms), and custom request fields. The Worker endpoint is an optional HTTPS setting. Public submission delivery, private request storage, attachment handling, Discord notifications and request management are not active until the Cloudflare Worker backend is deployed.
+- **Client Desk form builder:** configure inquiry form copy, custom contact methods and request fields. Public submissions are stored in a private GitHub repository and notified in a private Discord channel through the Worker. Attachments upload directly to Discord (up to 5 files / 8 MB total). Deployment and credentials are still required before the form is live.
 - No Discord bot token, GitHub PAT or other secret is stored in the public portfolio configuration.
 
 
@@ -122,7 +122,7 @@ The Worker implementation lives in worker/. It stores each inquiry as an individ
 - Configure GitHub and Discord credentials as Cloudflare Worker secrets, then deploy from the worker/ directory.
 - See worker/README.md for setup, API routes, security notes and the admin API.
 - The Worker API currently supports public submissions and authenticated admin list/status/note endpoints. The Studio inbox UI and a secure admin login/proxy still need to be connected.
-- Attachments are not supported in this initial pass; the current public Client Desk form submits text fields and contact details only.
+- Attachments are uploaded directly to Discord by the Worker (up to five allowed files and 8 MB total); only attachment metadata and the Discord message link are stored in private GitHub.
 
 
 ## Client Desk backend and private request inbox
@@ -132,4 +132,4 @@ The Worker implementation lives in worker/. It stores each inquiry as an individ
 - The Worker posts a notification embed to a private Discord channel and can mention a configured Discord user. Discord and GitHub credentials remain Worker secrets.
 - Studio → Content & settings → Request inbox provides password login, an eight-hour signed admin session held only in browser memory, request filtering, status updates and private admin notes.
 - Set `ADMIN_PASSWORD` and `SESSION_SECRET` as Worker secrets. The GitHub token must be scoped to the private request repository only.
-- Attachments are not implemented in this pass. The Worker and Studio have not been deployed or end-to-end tested; create the private request repository and configure Worker secrets before using the form.
+- The Worker and Studio have not been deployed or end-to-end tested. Create the private request repository and configure Worker secrets before using the form.
