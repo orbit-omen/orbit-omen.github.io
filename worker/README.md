@@ -24,7 +24,8 @@ Create the private repository before deployment. It can be empty; the Worker cre
    - `wrangler secret put DISCORD_BOT_TOKEN`
    - `wrangler secret put DISCORD_CHANNEL_ID`
    - `wrangler secret put DISCORD_MENTION_USER_ID` (optional)
-   - `wrangler secret put ADMIN_PASSWORD` (strong, unique password for Studio inbox login)\n   - `wrangler secret put SESSION_SECRET` (at least 32 random bytes, used to sign expiring admin sessions)
+   - `wrangler secret put ADMIN_PASSWORD` (strong, unique password for Studio inbox login)
+   - `wrangler secret put SESSION_SECRET` (at least 32 random bytes, used to sign expiring admin sessions)
 5. Deploy: `wrangler deploy`.
 6. Copy the deployed `workers.dev` URL into Studio → Client Desk → Worker endpoint.
 
@@ -37,7 +38,7 @@ Public routes:
 
 The Worker caps body and field sizes, strips control characters, validates required fields, and applies a best-effort per-IP in-memory rate limit. It saves the record to private GitHub **before** attempting Discord notification. If Discord is unavailable, the request remains stored and the API reports `discordNotified: false`.
 
-Admin routes require `Authorization: Bearer <ADMIN_TOKEN>`:
+Admin routes require `Authorization: Bearer <session-token>`. Sign in first with `POST /api/admin/login` and JSON `{ "password": "..." }`; the Worker returns an HMAC-signed session token that expires after 8 hours.
 - `GET /api/requests?limit=30` — returns up to 50 newest records.
 - `PATCH /api/requests/<uuid>` — updates status (`new`, `reviewing`, `waiting`, `accepted`, `completed`, `archived`) and/or `adminNotes`.
 
