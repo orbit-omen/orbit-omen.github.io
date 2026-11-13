@@ -4,6 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "npx serve .",
-    "check": "node --check assets/site.js && node --check studio/github.js && node --check studio/studio.js && node --check studio/page-builder.js && node --check studio/home-editor.js && node --check studio/media-library.js && node --check studio/creator.js && node --check studio/blog-studio.js && node --check studio/navigation-design.js && node --check studio/seo-contact.js && node --check studio/publishing-studio.js && node --check studio/orbit-expansion.js && node --check scripts/build-pages.mjs && node --check worker/src/index.js"
+    "check": "node --check assets/site.js && node --check studio/github.js && node --check studio/studio.js && node --check studio/page-builder.js && node --check studio/home-editor.js && node --check studio/media-library.js && node --check studio/creator.js && node --check studio/blog-studio.js && node --check studio/navigation-design.js && node --check studio/seo-contact.js && node --check studio/publishing-studio.js && node --check studio/orbit-expansion.js && node --check scripts/build-pages.mjs && node --check worker/src/index.js && node --check studio/client-inbox.js"
   }
-}
+}\n
