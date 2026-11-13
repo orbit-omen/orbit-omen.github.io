@@ -44,7 +44,7 @@ async function build(){
  if(shareImage){const imageUrl=new URL(shareImage,base);if(imageUrl.protocol!=="https:")throw new Error("Social preview image must resolve to HTTPS.");putMeta("og:image",imageUrl.href,true);putMeta("twitter:image",imageUrl.href);}
  if(config.seo?.noindex)putMeta("robots","noindex, nofollow");
  const canonical=pageDoc.head.querySelector('link[rel="canonical"]')||pageDoc.head.appendChild(pageDoc.createElement("link"));canonical.rel="canonical";canonical.href=base;
- files.push({path:"index.html",content:"<!doctype html>\\n"+pageDoc.documentElement.outerHTML});
+ files.push({path:"index.html",content:"<!doctype html>\n"+pageDoc.documentElement.outerHTML});
 
  generated=files;configSha=window.OrbitGitHub.getImportedSha?.()||"";generatedConfig=JSON.stringify(config);generatedBranch=document.getElementById("branch").value.trim();
  const host=$("generator-files");host.innerHTML=files.map(f=>'<div class="blog-row"><div class="blog-row-main"><b>'+esc(f.path)+'</b><small>'+new Blob([f.content]).size.toLocaleString()+' bytes</small></div><span class="tag">GENERATED</span></div>').join("");
