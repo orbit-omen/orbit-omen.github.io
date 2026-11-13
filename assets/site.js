@@ -33,14 +33,21 @@ function applyClientDesk(data){
   enabledMethods.forEach(m=>{const wrap=document.createElement("label");wrap.textContent=m.name+" — "+m.label;const input=document.createElement("input");input.name="contact_"+m.id;input.type=m.id==="email"?"email":"text";input.maxLength=300;input.autocomplete="off";input.dataset.contactMethod=m.id;input.hidden=true;wrap.append(input);form.append(wrap);select.addEventListener("change",()=>{input.hidden=select.value!==m.id;input.required=select.value===m.id;});});
  }
  const trap=document.createElement("input");trap.type="text";trap.name="website";trap.tabIndex=-1;trap.autocomplete="off";trap.setAttribute("aria-hidden","true");trap.style.position="absolute";trap.style.left="-10000px";form.append(trap);
+ const attachmentWrap=document.createElement("label");attachmentWrap.textContent="Attachments (optional) — up to 5 files, 8 MB total";
+ const attachmentInput=document.createElement("input");attachmentInput.type="file";attachmentInput.name="files";attachmentInput.multiple=true;attachmentInput.accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,text/csv,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";attachmentWrap.append(attachmentInput);form.append(attachmentWrap);
+ const attachmentHint=document.createElement("small");attachmentHint.className="contact-form-status";attachmentHint.textContent="Images, PDF, text, CSV, ZIP and Office documents. Files are delivered to the private Discord channel.";form.append(attachmentHint);
  const button=document.createElement("button");button.type="submit";button.className="button primary";button.textContent=settings.button||"Send project request";form.append(button);
  const status=document.createElement("p");status.className="contact-form-status";status.setAttribute("aria-live","polite");form.append(status);
  form.addEventListener("submit",async event=>{event.preventDefault();if(!form.reportValidity())return;if(trap.value)return;
   const payload={formId:"client-desk",site:location.origin+location.pathname,submittedAt:new Date().toISOString(),fields:{},contactMethods:{},preferredContact:form.elements.preferredContact?.value||""};
   new FormData(form).forEach((value,key)=>{if(key==="website")return;if(key.startsWith("contact_"))payload.contactMethods[key.slice(8)]=String(value).slice(0,300);else if(key!=="preferredContact")payload.fields[key]=String(value).slice(0,5000);});
-  button.disabled=true;status.textContent="Sending your request…";
-  try{const response=await fetch(settings.endpoint,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});if(!response.ok)throw new Error("Request could not be submitted.");form.reset();form.querySelectorAll("[data-contact-method]").forEach(input=>{input.hidden=true;input.required=false;});status.textContent=settings.success||"Request received. I'll be in touch.";}
-  catch(error){status.textContent="Could not send the request. Please try again later or use another contact method.";}
+  const chosenFiles=Array.from(attachmentInput.files||[]);const allowedTypes=new Set(attachmentInput.accept.split(","));
+  if(chosenFiles.length>5){status.textContent="Please attach no more than 5 files.";return;}
+  if(chosenFiles.some(file=>!allowedTypes.has(file.type))){status.textContent="One or more attachment types are not supported.";return;}
+  if(chosenFiles.reduce((sum,file)=>sum+file.size,0)>8*1024*1024){status.textContent="Attachments must total 8 MB or less.";return;}
+  button.disabled=true;status.textContent="Sending your request and attachments…";
+  try{const body=new FormData();body.append("payload",JSON.stringify(payload));chosenFiles.forEach(file=>body.append("files",file,file.name));const response=await fetch(settings.endpoint,{method:"POST",headers:{"Accept":"application/json"},body});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||"Request could not be submitted.");form.reset();form.querySelectorAll("[data-contact-method]").forEach(input=>{input.hidden=true;input.required=false;});status.textContent=settings.success||"Request received. I'll be in touch.";}
+  catch(error){status.textContent=error.message||"Could not send the request. Please try again later or use another contact method.";}
   finally{button.disabled=false;}
  });
  section.querySelector("div:last-child")?.append(form);
