@@ -39,7 +39,7 @@ function applyClientDesk(data){
  const button=document.createElement("button");button.type="submit";button.className="button primary";button.textContent=settings.button||"Send project request";form.append(button);
  const status=document.createElement("p");status.className="contact-form-status";status.setAttribute("aria-live","polite");form.append(status);
  form.addEventListener("submit",async event=>{event.preventDefault();if(!form.reportValidity())return;if(trap.value)return;
-  const payload={formId:"client-desk",site:location.origin+location.pathname,submittedAt:new Date().toISOString(),fields:{},contactMethods:{},preferredContact:form.elements.preferredContact?.value||""};
+  const payload={formId:"client-desk",site:location.origin+location.pathname,submittedAt:new Date().toISOString(),website:trap.value,fields:{},contactMethods:{},preferredContact:form.elements.preferredContact?.value||""};
   new FormData(form).forEach((value,key)=>{if(key==="website")return;if(key.startsWith("contact_"))payload.contactMethods[key.slice(8)]=String(value).slice(0,300);else if(key!=="preferredContact")payload.fields[key]=String(value).slice(0,5000);});
   const chosenFiles=Array.from(attachmentInput.files||[]);const allowedTypes=new Set(attachmentInput.accept.split(","));
   if(chosenFiles.length>5){status.textContent="Please attach no more than 5 files.";return;}
