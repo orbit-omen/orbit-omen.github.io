@@ -52,8 +52,10 @@ function requireEnv(env, keys) {
 async function adminLogin(request, env, cors) {
   requireEnv(env, ["ADMIN_PASSWORD", "SESSION_SECRET"]);
   loginRateCheck(request);
+  const length = Number(request.headers.get("content-length") || 0);
+  if (length > 2048) fail("Sign-in request is too large.", 413);
   const input = await request.json().catch(() => ({}));
-  const password = typeof input.password === "string" ? input.password : "";
+  const password = typeof input.password === "string" ? input.password.slice(0, 1024) : "";
   if (!safeEqual(password, env.ADMIN_PASSWORD)) fail("Incorrect admin password.", 401);
   const now = Math.floor(Date.now() / 1000);
   const payload = base64url(JSON.stringify({ sub: "orbit-studio-admin", iat: now, exp: now + 8 * 60 * 60 }));
