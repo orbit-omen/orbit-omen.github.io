@@ -138,7 +138,7 @@ function rateCheck(request) {
   if (memoryRate.size > 2000) for (const [key, values] of memoryRate) if (!values.length || now - values[values.length - 1] > 600000) memoryRate.delete(key);
 }
 async function createRequest(request, env, cors) {
-  requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO", "DISCORD_BOT_TOKEN", "DISCORD_CHANNEL_ID"]);
+  requireEnv(env, ["GITHUB_TOKEN", "REQUESTS_REPO", "DISCORD_BOT_TOKEN", "DISCORD_CHANNEL_ID", "TURNSTILE_SECRET_KEY"]);
   rateCheck(request);
   const length = Number(request.headers.get("content-length") || 0);
   if (length > MAX_BODY) fail("Request and attachments exceed the 8 MB upload limit.", 413);
@@ -154,6 +154,7 @@ async function createRequest(request, env, cors) {
     try { input = JSON.parse(raw); } catch { fail("Invalid JSON body."); }
   }
   if (clean(input.website, 200)) return json({ ok: true, message: "Request received." }, 200, cors);
+  await verifyTurnstile(input.turnstileToken, request, env);
   if (uploads.length > MAX_FILES) fail("Attach up to 5 files.", 413);
   let totalBytes = 0;
   const files = [];
@@ -207,6 +208,23 @@ async function createRequest(request, env, cors) {
   try { await notifyDiscord(env, record); discordNotified = true; }
   catch (error) { console.error("Discord notification failed:", error.message); }
   return json({ ok: true, id: record.id, discordNotified, attachmentCount: 0, message: "Request received." }, 201, cors);
+}
+async function verifyTurnstile(token, request, env) {
+  const responseToken = clean(token, 2048);
+  if (!responseToken) fail("Please complete the security check and try again.", 403);
+  const body = new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: responseToken });
+  const ip = request.headers.get("CF-Connecting-IP");
+  if (ip) body.set("remoteip", ip);
+  let result;
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body });
+    if (!response.ok) fail("Security verification is temporarily unavailable.", 503);
+    result = await response.json();
+  } catch (error) {
+    if (error.status) throw error;
+    fail("Security verification is temporarily unavailable.", 503);
+  }
+  if (!result.success) fail("Security check failed or expired. Please try again.", 403);
 }
 function requestPath(record) {
   const d = new Date(record.createdAt);
