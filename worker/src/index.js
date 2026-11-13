@@ -195,6 +195,7 @@ async function createRequest(request, env, cors) {
     attachments: [], discordMessageUrl: ""
   };
   if (files.length) {
+    requireEnv(env, ["DISCORD_GUILD_ID"]);
     const sent = await notifyDiscord(env, record, files);
     record.attachments = sent.attachments;
     record.discordMessageUrl = env.DISCORD_GUILD_ID ? "https://discord.com/channels/" + env.DISCORD_GUILD_ID + "/" + env.DISCORD_CHANNEL_ID + "/" + sent.messageId : "";
