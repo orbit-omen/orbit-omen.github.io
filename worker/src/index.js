@@ -64,7 +64,7 @@ function base64url(value) {
   const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
   let binary = "";
   bytes.forEach(byte => binary += String.fromCharCode(byte));
-  return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+  return btoa(binary).replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 }
 function decodeBase64url(value) {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
