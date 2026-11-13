@@ -88,3 +88,13 @@ Custom pages currently use query URLs such as `/?page=about-me`; GitHub Pages do
 - Generated pages, sitemap, robots file and `data/portfolio.json` are written through the Git Data API as a single commit, so the set is applied atomically. The Studio checks the imported configuration SHA before committing to avoid publishing over a newer configuration.
 - Studio displays recent repository commits and can selectively roll back Studio publication commits. Rollback creates a new commit, restores only `data/portfolio.json`, `blog/`, `sitemap.xml` and `robots.txt`, and refuses commits that also modify application/source files. Commits with incomplete GitHub file listings are rejected.
 - Clean article URLs are generated as actual directories with `index.html`; the existing query-string routes remain available as compatibility fallbacks.
+
+
+## OrbitOmen Studio — Expansion workspaces (Phase 12 foundation)
+
+- **Visual presets:** Cinematic Developer, Aurora Glass, Minimal Editorial, Creative Studio, Restaurant / Product, Neon Tech and Orbit Signature. Presets apply coordinated global design tokens; custom presets are saved in the portfolio configuration.
+- **Multi-site registry:** register independent website names, source branches and deployment paths. The main portfolio is shown as a protected primary site. This is a configuration manager only; branch aggregation into deployment paths requires the dedicated GitHub Actions deployment workflow.
+- **Shared media source:** configure the dedicated `media` branch and its public `/media/` mount path. The deployment workflow must assemble this branch into the Pages artifact; GitHub Pages does not publish arbitrary branches at matching URL paths automatically.
+- **Social Preview Studio:** configure default Open Graph / Discord title, description, image, handle and preview style. This phase saves metadata settings; the static HTML generator still needs to emit page-specific metadata into the initial HTML response for Discord crawler compatibility.
+- **Client Desk form builder:** configure inquiry form copy, enablement, custom contact methods (Instagram, Discord, email, WhatsApp, Telegram, X, LinkedIn and custom platforms), and custom request fields. The Worker endpoint is an optional HTTPS setting. Public submission delivery, private request storage, attachment handling, Discord notifications and request management are not active until the Cloudflare Worker backend is deployed.
+- No Discord bot token, GitHub PAT or other secret is stored in the public portfolio configuration.
