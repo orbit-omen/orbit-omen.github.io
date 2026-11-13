@@ -25,7 +25,7 @@ Create the private repository before deployment. It can be empty; the Worker cre
    - `wrangler secret put DISCORD_CHANNEL_ID`\n   - `wrangler secret put DISCORD_GUILD_ID` (required for file uploads and inbox links)
    - `wrangler secret put DISCORD_MENTION_USER_ID` (optional)
    - `wrangler secret put ADMIN_PASSWORD` (strong, unique password for Studio inbox login)
-   - `wrangler secret put SESSION_SECRET` (at least 32 random bytes, used to sign expiring admin sessions)
+   - `wrangler secret put SESSION_SECRET` (at least 32 random bytes, used to sign expiring admin sessions)\n   - `wrangler secret put TURNSTILE_SECRET_KEY` (Cloudflare Turnstile secret key)
 5. Deploy: `wrangler deploy`.
 6. Copy the deployed `workers.dev` URL into Studio → Client Desk → Worker endpoint.
 
@@ -34,7 +34,7 @@ The GitHub token is used only by the Worker. Never paste it into the portfolio c
 ## API
 Public routes:
 - `GET /api/health` — basic health check.
-- `POST /api/requests` — accepts JSON or multipart form data from the public Client Desk form. Multipart requests use a `payload` JSON field and repeated `files` fields. `fields.name` and `fields.description` are required; `website` is a honeypot and must be empty. Up to five allowed files, 8 MB total, are uploaded by the Worker directly to Discord. The private GitHub record stores attachment metadata and the Discord message link; no file is written to the public repository or an object store.
+- `POST /api/requests` — accepts JSON or multipart form data from the public Client Desk form. Multipart requests use a `payload` JSON field and repeated `files` fields. `fields.name` and `fields.description` are required; `website` is a honeypot and must be empty. Every real submission must include a valid `turnstileToken`; the Worker verifies it with Cloudflare Siteverify using `TURNSTILE_SECRET_KEY`. Up to five allowed files, 8 MB total, are uploaded by the Worker directly to Discord. The private GitHub record stores attachment metadata and the Discord message link; no file is written to the public repository or an object store.
 
 The Worker caps body and field sizes, strips control characters, validates required fields, and applies a best-effort per-IP in-memory rate limit. It saves the record to private GitHub **before** attempting Discord notification. If Discord is unavailable, the request remains stored and the API reports `discordNotified: false`.
 
@@ -45,7 +45,7 @@ Admin routes require `Authorization: Bearer <session-token>`. Sign in first with
 The Studio Request inbox calls the login endpoint and keeps the short-lived signed token in memory only. It is not written to localStorage, portfolio JSON, or GitHub. Sign out or close/reload the tab to discard it.
 
 ## Security notes
-- The in-memory rate limiter is isolate-local, not a global quota. Add Cloudflare Turnstile and/or a Cloudflare rate-limiting rule before broad public launch.
+- The in-memory rate limiter is isolate-local, not a global quota. Cloudflare Turnstile verification is enforced on every non-honeypot submission. Configure a Turnstile widget for the portfolio hostname, put its public site key in Studio → Client Desk, and add the matching secret as `TURNSTILE_SECRET_KEY`. Also consider a Cloudflare rate-limiting rule because the in-memory limiter is isolate-local.
 - Keep the request repository private and restrict collaborators. Define a retention policy for visitor data.
 - Keep the Discord channel private; embeds include visitor-supplied project information.
 - Uploads are restricted to image, PDF, text, CSV, ZIP and Office document MIME types, with a five-file and 8 MB total limit. The browser never receives the Discord bot token. Discord channel permissions and retention settings still need to be reviewed before public launch.
