@@ -92,7 +92,8 @@ function applyPortfolioBackground(data){
  const overlay=document.createElement("div");Object.assign(overlay.style,{position:"absolute",inset:"0",background:"rgba(8,6,14,"+Math.max(0,Math.min(90,Number(cfg.overlay??48))/100)+")",backdropFilter:"blur("+Math.max(0,Math.min(16,Number(cfg.blur)||0))+"px)"});
  layer.append(media,overlay);document.body.prepend(layer);
 }
-\nfunction renderSite(data){const d={...defaults,...data};const params=new URLSearchParams(location.search);if(params.get("blog")==="1"){renderBlogArchive(d);return;}const contentSlug=params.get("content");const contentItem=(d.contentItems||[]).find(x=>x.slug===contentSlug);if(contentSlug&&contentItem){renderContentItem(contentItem);return;}const slug=params.get("page");const custom=(d.pages||[]).find(p=>p.slug===slug);if(slug&&custom){renderCustomPage(custom,d);return;}
+
+function renderSite(data){const d={...defaults,...data};const params=new URLSearchParams(location.search);if(params.get("blog")==="1"){renderBlogArchive(d);return;}const contentSlug=params.get("content");const contentItem=(d.contentItems||[]).find(x=>x.slug===contentSlug);if(contentSlug&&contentItem){renderContentItem(contentItem);return;}const slug=params.get("page");const custom=(d.pages||[]).find(p=>p.slug===slug);if(slug&&custom){renderCustomPage(custom,d);return;}
 const h=document.querySelector("#hero-title");if(h)h.replaceChildren(safeHeadline(d.heroTitle||defaults.heroTitle));
 setText("#hero-desc",d.tagline||d.heroDesc||defaults.heroDesc);setText("#about-copy",d.aboutCopy||d.about?.text||d.about||defaults.about);
 const headings=[["#about-heading",d.aboutHeading],["#work-heading",d.workHeading],["#services-heading",d.servicesHeading],["#contact-heading",d.contactHeading]];headings.forEach(([s,v])=>setText(s,v));
