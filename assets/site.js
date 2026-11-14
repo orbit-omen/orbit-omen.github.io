@@ -85,7 +85,8 @@ function applyPortfolioBackground(data){
  if(old)old.remove();
  if(!cfg.url)return;
  const layer=document.createElement("div");layer.id="portfolio-background";layer.setAttribute("aria-hidden","true");
- Object.assign(layer.style,{position:"fixed",inset:"0",zIndex:"0",pointerEvents:"none",overflow:"hidden",background:"#09070f"});\n document.querySelectorAll("body > *:not(#portfolio-background)").forEach(node=>{node.style.position=node.style.position||"relative";node.style.zIndex=node.style.zIndex||"1";});
+ Object.assign(layer.style,{position:"fixed",inset:"0",zIndex:"0",pointerEvents:"none",overflow:"hidden",background:"#09070f"});
+ document.querySelectorAll("body > *:not(#portfolio-background)").forEach(node=>{node.style.position=node.style.position||"relative";node.style.zIndex=node.style.zIndex||"1";});
  const media=cfg.type==="video"?document.createElement("video"):document.createElement("div");
  if(cfg.type==="video"){media.src=safeImageUrl(cfg.url);media.autoplay=true;media.muted=true;media.loop=true;media.playsInline=true;media.preload="metadata";Object.assign(media.style,{width:"100%",height:"100%",objectFit:"cover"});}
  else Object.assign(media.style,{position:"absolute",inset:"-2%",backgroundImage:"url("+JSON.stringify(safeImageUrl(cfg.url))+")",backgroundPosition:"center",backgroundSize:"cover"});
