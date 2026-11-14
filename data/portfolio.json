@@ -34,7 +34,32 @@
       }
     ]
   },
-  "projects": [],
+  "projects": [
+    {
+      "title": "Orbit Launcher",
+      "category": "DESKTOP / MINECRAFT",
+      "description": "A polished Minecraft launcher focused on speed, customization and a distinct OrbitOmen identity.",
+      "url": "https://github.com/orbit-omen"
+    },
+    {
+      "title": "MineMotion",
+      "category": "CREATIVE SOFTWARE",
+      "description": "A creative workspace for building Minecraft animations, scenes and visual stories.",
+      "url": "https://github.com/orbit-omen"
+    },
+    {
+      "title": "Aetheris",
+      "category": "DESKTOP / CREATOR TOOLS",
+      "description": "A lightweight screen recording and instant replay experience for creators.",
+      "url": "https://github.com/orbit-omen"
+    },
+    {
+      "title": "SkriptStock",
+      "category": "WEB / COMMUNITY",
+      "description": "A curated home for Minecraft scripts, plugins and community-made resources.",
+      "url": "https://github.com/orbit-omen"
+    }
+  ],
   "services": [],
   "videos": [],
   "updates": [],
